@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sources", "Sources", "{5FF4B216-DC02-4B61-8FC7-ADBEF7F7445C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MusicDb", "Sources\MusicDb\MusicDb.csproj", "{5026093E-DE80-4991-94E9-6DCBF35E976E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MusicDb.Api", "Sources\MusicDb.Api\MusicDb.Api.csproj", "{99A00DA8-F392-4586-97B2-316044A3D0B7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5026093E-DE80-4991-94E9-6DCBF35E976E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5026093E-DE80-4991-94E9-6DCBF35E976E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5026093E-DE80-4991-94E9-6DCBF35E976E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5026093E-DE80-4991-94E9-6DCBF35E976E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99A00DA8-F392-4586-97B2-316044A3D0B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99A00DA8-F392-4586-97B2-316044A3D0B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99A00DA8-F392-4586-97B2-316044A3D0B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99A00DA8-F392-4586-97B2-316044A3D0B7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5026093E-DE80-4991-94E9-6DCBF35E976E} = {5FF4B216-DC02-4B61-8FC7-ADBEF7F7445C}
+		{99A00DA8-F392-4586-97B2-316044A3D0B7} = {5FF4B216-DC02-4B61-8FC7-ADBEF7F7445C}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3A482ED7-EF50-4A83-95CD-A2D2E4C48B8C}
+	EndGlobalSection
+EndGlobal
