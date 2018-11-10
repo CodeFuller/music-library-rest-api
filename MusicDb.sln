@@ -9,6 +9,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MusicDb", "Sources\MusicDb\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MusicDb.Api", "Sources\MusicDb.Api\MusicDb.Api.csproj", "{99A00DA8-F392-4586-97B2-316044A3D0B7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MusicDb.Abstractions", "Sources\MusicDb.Abstractions\MusicDb.Abstractions.csproj", "{28FDF560-CEB8-4966-87B9-FEB302E193D9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MusicDb.Dal.SqlServer", "Sources\MusicDb.Dal.SqlServer\MusicDb.Dal.SqlServer.csproj", "{E459D2C6-B489-4202-A778-DC2CDCA665B6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,6 +27,14 @@ Global
 		{99A00DA8-F392-4586-97B2-316044A3D0B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99A00DA8-F392-4586-97B2-316044A3D0B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{99A00DA8-F392-4586-97B2-316044A3D0B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{28FDF560-CEB8-4966-87B9-FEB302E193D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{28FDF560-CEB8-4966-87B9-FEB302E193D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{28FDF560-CEB8-4966-87B9-FEB302E193D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{28FDF560-CEB8-4966-87B9-FEB302E193D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E459D2C6-B489-4202-A778-DC2CDCA665B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E459D2C6-B489-4202-A778-DC2CDCA665B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E459D2C6-B489-4202-A778-DC2CDCA665B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E459D2C6-B489-4202-A778-DC2CDCA665B6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -30,6 +42,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{5026093E-DE80-4991-94E9-6DCBF35E976E} = {5FF4B216-DC02-4B61-8FC7-ADBEF7F7445C}
 		{99A00DA8-F392-4586-97B2-316044A3D0B7} = {5FF4B216-DC02-4B61-8FC7-ADBEF7F7445C}
+		{28FDF560-CEB8-4966-87B9-FEB302E193D9} = {5FF4B216-DC02-4B61-8FC7-ADBEF7F7445C}
+		{E459D2C6-B489-4202-A778-DC2CDCA665B6} = {5FF4B216-DC02-4B61-8FC7-ADBEF7F7445C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3A482ED7-EF50-4A83-95CD-A2D2E4C48B8C}

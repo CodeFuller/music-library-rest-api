@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="Rules for StyleCop.Analyzers" Description="Code analysis rules for test projects" ToolsVersion="15.0">
+  <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers">
+    <Rule Id="SA0001" Action="None" Description="All diagnostics of XML documentation comments has been disabled due to the current project configuration."/>
+    <Rule Id="SA1027" Action="None" Description="The C# code contains a tab character." />
+    <Rule Id="SA1101" Action="None" Description="A call to an instance member of the local class or a base class is not prefixed with ‘this.’, within a C# code file." />
+    <Rule Id="SA1117" Action="None" Description="The parameters to a C# method or indexer call or declaration are not all on the same line or each on a separate line." />
+    <Rule Id="SA1121" Action="None" Description="The code uses one of the basic C# types, but does not use the built-in alias for the type." />
+    <Rule Id="SA1200" Action="None" Description="A C# using directive is placed outside of a namespace element."/>
+    <Rule Id="SA1201" Action="None" Description="An element within a C# code file is out of order in relation to the other elements in the code." />
+    <Rule Id="SA1202" Action="None" Description="An element within a C# code file is out of order within regard to access level, in relation to other elements in the code."/>
+    <Rule Id="SA1204" Action="None" Description="A static element is positioned beneath an instance element of the same type." />
+    <Rule Id="SA1633" Action="None" Description="A C# code file is missing a standard file header."/>
+    <Rule Id="SA1652" Action="None" Description="All diagnostics of XML documentation comments has been disabled due to the current project configuration."/>
+  </Rules>
+  <Rules AnalyzerId="Microsoft.CodeAnalysis.FxCopAnalyzers" RuleNamespace="Microsoft.CodeAnalysis.FxCopAnalyzers">
+    <Rule Id="CA1707" Action="None" Description="Identifiers should not contain underscores."/>
+    <Rule Id="CA2007" Action="None" Description="Do not directly await a Task without calling ConfigureAwait."/>
+  </Rules>
+</RuleSet>
