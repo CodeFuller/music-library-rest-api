@@ -28,6 +28,9 @@ namespace MusicDb
 		{
 			services.Configure<DatabaseConnectionSettings>(Configuration.GetSection("database"));
 
+			// This call should be made before services.AddMvc().
+			services.AddRouting(options => options.LowercaseUrls = true);
+
 			services
 				.AddMvc()
 				.AddApplicationPart(typeof(AnchorType).Assembly)
