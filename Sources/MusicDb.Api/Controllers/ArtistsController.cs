@@ -50,7 +50,7 @@ namespace MusicDb.Api.Controllers
 		/// </returns>
 		[HttpPost]
 		[SwaggerResponse(HttpStatusCode.Created, typeof(void))]
-		[SwaggerResponse(HttpStatusCode.Unauthorized, typeof(void), Description = "Principal is not authorized for database modification.")]
+		[SwaggerResponse(HttpStatusCode.Forbidden, typeof(void), Description = "Principal is not authorized for database modification.")]
 		public ActionResult Post([FromBody] ArtistDto artist)
 		{
 			return CreatedAtAction(nameof(Get), new { id = 1 }, null);
@@ -66,7 +66,7 @@ namespace MusicDb.Api.Controllers
 		/// </returns>
 		[HttpPut("{id}")]
 		[SwaggerResponse(HttpStatusCode.NoContent, typeof(void))]
-		[SwaggerResponse(HttpStatusCode.Unauthorized, typeof(void), Description = "Principal is not authorized for database modification.")]
+		[SwaggerResponse(HttpStatusCode.Forbidden, typeof(void), Description = "Principal is not authorized for database modification.")]
 		[SwaggerResponse(HttpStatusCode.NotFound, typeof(void), Description = "Requested artist was not found.")]
 		public ActionResult Put(int id, [FromBody] ArtistDto artist)
 		{
@@ -82,7 +82,7 @@ namespace MusicDb.Api.Controllers
 		/// </returns>
 		[HttpDelete("{id}")]
 		[SwaggerResponse(HttpStatusCode.NoContent, typeof(void))]
-		[SwaggerResponse(HttpStatusCode.Unauthorized, typeof(void), Description = "Principal is not authorized for database modification.")]
+		[SwaggerResponse(HttpStatusCode.Forbidden, typeof(void), Description = "Principal is not authorized for database modification.")]
 		[SwaggerResponse(HttpStatusCode.NotFound, typeof(void), Description = "Requested artist was not found.")]
 		public ActionResult Delete(int id)
 		{
