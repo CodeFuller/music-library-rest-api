@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using MusicDb.Abstractions.Interfaces;
 using MusicDb.Abstractions.Settings;
 using MusicDb.Api;
@@ -41,16 +42,18 @@ namespace MusicDb
 			services.AddTransient<IDatabaseMigrator, DatabaseMigrator>();
 			services.AddTransient<IArtistsRepository, ArtistsRepository>();
 
-			// MusicDbContext should be registered as scoped dependency,
-			// so that entities loaded within different repositories are the same.
-			services.AddScoped<MusicDbContext>();
+			var connectionString = Configuration.GetConnectionString("musicDB");
+			if (String.IsNullOrWhiteSpace(connectionString))
+			{
+				throw new InvalidOperationException("Database connection string is not set");
+			}
+
+			services.AddDbContext<MusicDbContext>(options => options.UseSqlServer(connectionString));
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
 		public static void Configure(IApplicationBuilder app, IHostingEnvironment env)
 		{
-			ApplyDatabseMigrations(app);
-
 			if (env.IsDevelopment())
 			{
 				app.UseDeveloperExceptionPage();
@@ -62,18 +65,6 @@ namespace MusicDb
 			});
 
 			app.UseMvc();
-		}
-
-		private static void ApplyDatabseMigrations(IApplicationBuilder app)
-		{
-			var serviceProvider = app.ApplicationServices;
-
-			// Scoped dependency of IndexingManagerContext could not be resolved from root provider.
-			// That's why we create it directly
-			var dbContext = new MusicDbContext(serviceProvider.GetRequiredService<IOptions<DatabaseConnectionSettings>>());
-
-			var dbMigrator = serviceProvider.GetRequiredService<IDatabaseMigrator>();
-			dbMigrator.Migrate(dbContext);
 		}
 	}
 }

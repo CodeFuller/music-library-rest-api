@@ -8,7 +8,11 @@ namespace MusicDb
 	{
 		public static async Task Main(string[] args)
 		{
-			await CreateWebHostBuilder(args).Build().RunAsync().ConfigureAwait(false);
+			await CreateWebHostBuilder(args)
+				.Build()
+				.ApplyMigrations()
+				.RunAsync()
+				.ConfigureAwait(false);
 		}
 
 		public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
