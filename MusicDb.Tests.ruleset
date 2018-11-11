@@ -10,6 +10,7 @@
     <Rule Id="SA1201" Action="None" Description="An element within a C# code file is out of order in relation to the other elements in the code." />
     <Rule Id="SA1202" Action="None" Description="An element within a C# code file is out of order within regard to access level, in relation to other elements in the code."/>
     <Rule Id="SA1204" Action="None" Description="A static element is positioned beneath an instance element of the same type." />
+    <Rule Id="SA1512" Action="None" Description="Single-line comments must not be followed by blank line." />
     <Rule Id="SA1633" Action="None" Description="A C# code file is missing a standard file header."/>
     <Rule Id="SA1652" Action="None" Description="All diagnostics of XML documentation comments has been disabled due to the current project configuration."/>
   </Rules>
