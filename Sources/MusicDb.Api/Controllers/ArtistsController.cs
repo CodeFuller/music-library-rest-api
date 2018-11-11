@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 using MusicDb.Abstractions.Exceptions;
 using MusicDb.Abstractions.Interfaces;
 using MusicDb.Abstractions.Models;
-using MusicDb.Api.Dto;
+using MusicDb.Api.Dto.ArtistDto;
 using NSwag.Annotations;
 
 namespace MusicDb.Api.Controllers
@@ -17,7 +17,7 @@ namespace MusicDb.Api.Controllers
 	/// <summary>
 	/// Artist resource represents solo artist or a band.
 	/// </summary>
-	[Route("api/[controller]")]
+	[Route("api/artists")]
 	[ApiController]
 	public class ArtistsController : ControllerBase
 	{
@@ -49,24 +49,24 @@ namespace MusicDb.Api.Controllers
 		/// <summary>
 		/// Retrieves specific artist.
 		/// </summary>
-		/// <param name="id">Id of requested artist.</param>
+		/// <param name="artistId">Id of requested artist.</param>
 		/// <param name="cancellationToken">Cancellation token.</param>
 		/// <returns>
 		/// Returns artist data for requested id.
 		/// </returns>
-		[HttpGet("{id}")]
+		[HttpGet("{artistId:int}")]
 		[SwaggerResponse(HttpStatusCode.OK, typeof(OutputArtistData))]
 		[SwaggerResponse(HttpStatusCode.NotFound, typeof(void), Description = "Requested artist was not found.")]
-		public async Task<ActionResult<OutputArtistData>> GetArtist(int id, CancellationToken cancellationToken)
+		public async Task<ActionResult<OutputArtistData>> GetArtist(int artistId, CancellationToken cancellationToken)
 		{
 			try
 			{
-				var artist = await repository.GetArtist(id, cancellationToken).ConfigureAwait(false);
+				var artist = await repository.GetArtist(artistId, cancellationToken).ConfigureAwait(false);
 				return CreateArtistDto(artist);
 			}
 			catch (NotFoundException e)
 			{
-				logger.LogWarning(e, $"Failed to find artist with id of {id}");
+				logger.LogWarning(e, "Failed to find artist {ArtistId}", artistId);
 				return NotFound();
 			}
 		}
@@ -74,6 +74,8 @@ namespace MusicDb.Api.Controllers
 		/// <summary>
 		/// Creates new artist.
 		/// </summary>
+		/// <param name="artist">Data for new artist.</param>
+		/// <param name="cancellationToken">Cancellation token.</param>
 		/// <returns>
 		/// Returns the location of newly created artist.
 		/// </returns>
@@ -81,7 +83,7 @@ namespace MusicDb.Api.Controllers
 		[SwaggerResponse(HttpStatusCode.Created, typeof(void))]
 		[SwaggerResponse(HttpStatusCode.Forbidden, typeof(void), Description = "Principal is not authorized for database modification.")]
 		[SwaggerResponse(HttpStatusCode.Conflict, typeof(void), Description = "The artist with specified name already exists.")]
-		public async Task<ActionResult> Post([FromBody] InputArtistData artist, CancellationToken cancellationToken)
+		public async Task<ActionResult> CreateArtist([FromBody] InputArtistData artist, CancellationToken cancellationToken)
 		{
 			var model = artist.ToModel();
 
@@ -91,7 +93,7 @@ namespace MusicDb.Api.Controllers
 			}
 			catch (DuplicateKeyException e)
 			{
-				logger.LogWarning(e, $"Failed to create artist '{model.Name}'");
+				logger.LogWarning(e, "Failed to create artist '{ArtistName}'", model.Name);
 				return Conflict();
 			}
 
@@ -101,19 +103,19 @@ namespace MusicDb.Api.Controllers
 		/// <summary>
 		/// Updates specific artist.
 		/// </summary>
-		/// <param name="id">Id of updated artist.</param>
+		/// <param name="artistId">Id of updated artist.</param>
 		/// <param name="artist">New data for the artist.</param>
 		/// <param name="cancellationToken">Cancellation token.</param>
 		/// <returns>
 		/// Artist data was updated successfully.
 		/// </returns>
-		[HttpPut("{id}")]
+		[HttpPut("{artistId:int}")]
 		[SwaggerResponse(HttpStatusCode.NoContent, typeof(void))]
 		[SwaggerResponse(HttpStatusCode.Forbidden, typeof(void), Description = "Principal is not authorized for database modification.")]
 		[SwaggerResponse(HttpStatusCode.NotFound, typeof(void), Description = "Requested artist was not found.")]
-		public async Task<ActionResult> Put(int id, [FromBody] InputArtistData artist, CancellationToken cancellationToken)
+		public async Task<ActionResult> UpdateArtist(int artistId, [FromBody] InputArtistData artist, CancellationToken cancellationToken)
 		{
-			var model = artist.ToModel(id);
+			var model = artist.ToModel(artistId);
 
 			try
 			{
@@ -121,12 +123,12 @@ namespace MusicDb.Api.Controllers
 			}
 			catch (NotFoundException e)
 			{
-				logger.LogWarning(e, $"Failed to find artist with id of {id}");
+				logger.LogWarning(e, "Failed to find artist {ArtistId}", artistId);
 				return NotFound();
 			}
 			catch (DuplicateKeyException e)
 			{
-				logger.LogWarning(e, $"Failed to update artist with id of {id}");
+				logger.LogWarning(e, "Failed to update artist {ArtistId}", artistId);
 				return Conflict();
 			}
 
@@ -136,24 +138,24 @@ namespace MusicDb.Api.Controllers
 		/// <summary>
 		/// Deletes specific artist.
 		/// </summary>
-		/// <param name="id">Id of deleted artist.</param>
+		/// <param name="artistId">Id of deleted artist.</param>
 		/// <param name="cancellationToken">Cancellation token.</param>
 		/// <returns>
 		/// Artist was deleted successfully.
 		/// </returns>
-		[HttpDelete("{id}")]
+		[HttpDelete("{artistId:int}")]
 		[SwaggerResponse(HttpStatusCode.NoContent, typeof(void))]
 		[SwaggerResponse(HttpStatusCode.Forbidden, typeof(void), Description = "Principal is not authorized for database modification.")]
 		[SwaggerResponse(HttpStatusCode.NotFound, typeof(void), Description = "Requested artist was not found.")]
-		public async Task<ActionResult> Delete(int id, CancellationToken cancellationToken)
+		public async Task<ActionResult> DeleteArtist(int artistId, CancellationToken cancellationToken)
 		{
 			try
 			{
-				await repository.DeleteArtist(id, cancellationToken).ConfigureAwait(false);
+				await repository.DeleteArtist(artistId, cancellationToken).ConfigureAwait(false);
 			}
 			catch (NotFoundException e)
 			{
-				logger.LogWarning(e, $"Failed to find artist with id of {id}");
+				logger.LogWarning(e, "Failed to delete artist {ArtistId}", artistId);
 				return NotFound();
 			}
 
@@ -167,7 +169,7 @@ namespace MusicDb.Api.Controllers
 
 		private Uri GetArtistUri(int artistId)
 		{
-			var actionUrl = Url.Action(nameof(GetArtist), null, new { id = artistId }, Request.Scheme, Request.Host.ToUriComponent());
+			var actionUrl = Url.Action(nameof(GetArtist), null, new { artistId }, Request.Scheme, Request.Host.ToUriComponent());
 			return new Uri(actionUrl, UriKind.RelativeOrAbsolute);
 		}
 	}

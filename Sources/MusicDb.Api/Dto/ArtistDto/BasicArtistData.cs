@@ -1,11 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace MusicDb.Dto
+namespace MusicDb.Api.Dto.ArtistDto
 {
-	public class ArtistDto
+	public abstract class BasicArtistData
 	{
-		public int Id { get; set; }
-
 		[Required]
 		public string Name { get; set; }
 	}

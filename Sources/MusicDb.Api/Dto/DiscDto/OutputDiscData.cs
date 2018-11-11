@@ -2,15 +2,16 @@
 using System.Collections.Generic;
 using MusicDb.Abstractions.Models;
 
-namespace MusicDb.Api.Dto
+namespace MusicDb.Api.Dto.DiscDto
 {
-	public class OutputArtistData : BasicArtistData
+	public class OutputDiscData : BasicDiscData
 	{
 		public ICollection<LinkDto> Links { get; set; } = new List<LinkDto>();
 
-		public OutputArtistData(Artist artist, Uri location)
+		public OutputDiscData(Disc disc, Uri location)
 		{
-			Name = artist.Name;
+			Title = disc.Title;
+			Year = disc.Year;
 			Links.Add(LinkDto.Self(location));
 		}
 	}

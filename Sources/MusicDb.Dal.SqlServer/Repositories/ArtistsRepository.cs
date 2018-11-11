@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading;
@@ -12,70 +11,53 @@ using MusicDb.Dal.SqlServer.Internal;
 
 namespace MusicDb.Dal.SqlServer.Repositories
 {
-	public class ArtistsRepository : IArtistsRepository
+	public class ArtistsRepository : BasicRepository, IArtistsRepository
 	{
-		private readonly MusicDbContext context;
-
 		public ArtistsRepository(MusicDbContext context)
+			: base(context)
 		{
-			this.context = context ?? throw new ArgumentNullException(nameof(context));
 		}
 
 		public async Task CreateArtist(Artist artist, CancellationToken cancellationToken)
 		{
-			context.Artists.Add(artist);
+			Context.Artists.Add(artist);
 
 			await SaveChanges(cancellationToken).ConfigureAwait(false);
 		}
 
 		public async Task<ICollection<Artist>> GetAllArtists(CancellationToken cancellationToken)
 		{
-			return await context.Artists
+			return await Context.Artists
 				.OrderBy(a => a.Id)
 				.ToListAsync(cancellationToken).ConfigureAwait(false);
 		}
 
 		public async Task<Artist> GetArtist(int artistId, CancellationToken cancellationToken)
 		{
-			return await FindArtist(artistId, cancellationToken).ConfigureAwait(false);
+			return await FindArtist(artistId, includeDiscs: false, cancellationToken: cancellationToken).ConfigureAwait(false);
 		}
 
 		public async Task UpdateArtist(Artist artist, CancellationToken cancellationToken)
 		{
-			var artistEntity = await FindArtist(artist.Id, cancellationToken).ConfigureAwait(false);
-			context.Entry(artistEntity).CurrentValues.SetValues(artist);
+			var artistEntity = await FindArtist(artist.Id, includeDiscs: false, cancellationToken: cancellationToken).ConfigureAwait(false);
+			Context.Entry(artistEntity).CurrentValues.SetValues(artist);
 
 			await SaveChanges(cancellationToken).ConfigureAwait(false);
 		}
 
 		public async Task DeleteArtist(int artistId, CancellationToken cancellationToken)
 		{
-			var artistEntity = await FindArtist(artistId, cancellationToken).ConfigureAwait(false);
-			context.Artists.Remove(artistEntity);
+			var artistEntity = await FindArtist(artistId, includeDiscs: false, cancellationToken: cancellationToken).ConfigureAwait(false);
+			Context.Artists.Remove(artistEntity);
 
-			await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-		}
-
-		private async Task<Artist> FindArtist(int artistId, CancellationToken cancellationToken)
-		{
-			var artistEntity = await context.Artists
-				.Where(a => a.Id == artistId)
-				.FirstOrDefaultAsync(cancellationToken)
-				.ConfigureAwait(false);
-
-			if (artistEntity == null)
-			{
-				throw new NotFoundException($"Artist with id of {artistId} was not found");
-			}
-
-			return artistEntity;
+			await Context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 		}
 
 		private async Task SaveChanges(CancellationToken cancellationToken)
 		{
 			try
 			{
-				await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+				await Context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 			}
 			catch (DbUpdateException e) when (e.InnerException is SqlException sqlException && sqlException.Number == SqlErrors.DuplicateKey)
 			{

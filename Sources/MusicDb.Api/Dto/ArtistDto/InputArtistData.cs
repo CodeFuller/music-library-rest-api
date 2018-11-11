@@ -1,6 +1,6 @@
 ﻿using MusicDb.Abstractions.Models;
 
-namespace MusicDb.Api.Dto
+namespace MusicDb.Api.Dto.ArtistDto
 {
 	public class InputArtistData : BasicArtistData
 	{

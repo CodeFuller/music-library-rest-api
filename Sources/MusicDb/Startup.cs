@@ -41,6 +41,7 @@ namespace MusicDb
 
 			services.AddTransient<IDatabaseMigrator, DatabaseMigrator>();
 			services.AddTransient<IArtistsRepository, ArtistsRepository>();
+			services.AddTransient<IDiscsRepository, DiscsRepository>();
 
 			var connectionString = Configuration.GetConnectionString("musicDB");
 			if (String.IsNullOrWhiteSpace(connectionString))
