@@ -24,7 +24,6 @@ namespace MusicDb
 
 		public IConfiguration Configuration { get; }
 
-		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.Configure<DatabaseConnectionSettings>(Configuration.GetSection("database"));
@@ -42,6 +41,7 @@ namespace MusicDb
 			services.AddTransient<IDatabaseMigrator, DatabaseMigrator>();
 			services.AddTransient<IArtistsRepository, ArtistsRepository>();
 			services.AddTransient<IDiscsRepository, DiscsRepository>();
+			services.AddTransient<ISongsRepository, SongsRepository>();
 
 			var connectionString = Configuration.GetConnectionString("musicDB");
 			if (String.IsNullOrWhiteSpace(connectionString))
@@ -52,7 +52,6 @@ namespace MusicDb
 			services.AddDbContext<MusicDbContext>(options => options.UseSqlServer(connectionString));
 		}
 
-		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
 		public static void Configure(IApplicationBuilder app, IHostingEnvironment env)
 		{
 			if (env.IsDevelopment())

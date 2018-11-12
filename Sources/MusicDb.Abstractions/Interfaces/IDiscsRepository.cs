@@ -7,7 +7,7 @@ namespace MusicDb.Abstractions.Interfaces
 {
 	public interface IDiscsRepository
 	{
-		Task CreateDisc(int artistId, Disc disc, CancellationToken cancellationToken);
+		Task<int> CreateDisc(int artistId, Disc disc, CancellationToken cancellationToken);
 
 		Task<ICollection<Disc>> GetAllArtistDiscs(int artistId, CancellationToken cancellationToken);
 

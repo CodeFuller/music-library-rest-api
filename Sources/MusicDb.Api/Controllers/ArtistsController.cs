@@ -86,10 +86,11 @@ namespace MusicDb.Api.Controllers
 		public async Task<ActionResult> CreateArtist([FromBody] InputArtistData artist, CancellationToken cancellationToken)
 		{
 			var model = artist.ToModel();
+			int newArtistId;
 
 			try
 			{
-				await repository.CreateArtist(model, cancellationToken).ConfigureAwait(false);
+				newArtistId = await repository.CreateArtist(model, cancellationToken).ConfigureAwait(false);
 			}
 			catch (DuplicateKeyException e)
 			{
@@ -97,7 +98,7 @@ namespace MusicDb.Api.Controllers
 				return Conflict();
 			}
 
-			return Created(GetArtistUri(model.Id), null);
+			return Created(GetArtistUri(newArtistId), null);
 		}
 
 		/// <summary>

@@ -38,7 +38,7 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 		}
 
 		[TestMethod]
-		public async Task CreateArtist_IfArtistWasCreated_FillsArtistId()
+		public async Task CreateArtist_IfArtistWasCreated_ReturnsIdOfNewArtist()
 		{
 			// Arrange
 
@@ -51,13 +51,13 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 
 			// Act
 
-			await target.CreateArtist(artist, CancellationToken.None);
+			var newId = await target.CreateArtist(artist, CancellationToken.None);
 
 			// Assert
 
 			var context = new MusicDbContext(options);
-			Assert.AreNotEqual(0, artist.Id);
-			Assert.AreEqual(context.Artists.Single().Id, artist.Id);
+			Assert.AreNotEqual(0, newId);
+			Assert.AreEqual(context.Artists.Single().Id, newId);
 		}
 
 		[TestMethod]

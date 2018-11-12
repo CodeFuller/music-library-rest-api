@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging;
 using MusicDb.Abstractions.Exceptions;
 using MusicDb.Abstractions.Interfaces;
 using MusicDb.Abstractions.Models;
-using MusicDb.Api.Dto.ArtistDto;
 using MusicDb.Api.Dto.DiscDto;
 using NSwag.Annotations;
 
@@ -64,7 +63,7 @@ namespace MusicDb.Api.Controllers
 		/// Returns disc data for requested id.
 		/// </returns>
 		[HttpGet("discs/{discId:int}")]
-		[SwaggerResponse(HttpStatusCode.OK, typeof(OutputArtistData))]
+		[SwaggerResponse(HttpStatusCode.OK, typeof(OutputDiscData))]
 		[SwaggerResponse(HttpStatusCode.NotFound, typeof(void), Description = "Requested artist or disc was not found.")]
 		public async Task<ActionResult<OutputDiscData>> GetDisc(int artistId, int discId, CancellationToken cancellationToken)
 		{
@@ -93,12 +92,23 @@ namespace MusicDb.Api.Controllers
 		[HttpPost("discs")]
 		[SwaggerResponse(HttpStatusCode.Created, typeof(void))]
 		[SwaggerResponse(HttpStatusCode.Forbidden, typeof(void), Description = "Principal is not authorized for database modification.")]
+		[SwaggerResponse(HttpStatusCode.NotFound, typeof(void), Description = "Requested artist was not found.")]
 		public async Task<ActionResult> CreateDisc(int artistId, [FromBody] InputDiscData disc, CancellationToken cancellationToken)
 		{
 			var model = disc.ToModel();
-			await discsRepository.CreateDisc(artistId, model, cancellationToken).ConfigureAwait(false);
+			int newDiscId;
 
-			return Created(GetDiscUri(artistId, model.Id), null);
+			try
+			{
+				newDiscId = await discsRepository.CreateDisc(artistId, model, cancellationToken).ConfigureAwait(false);
+			}
+			catch (NotFoundException e)
+			{
+				logger.LogWarning(e, "Failed to create disc for artist {ArtistId}", artistId);
+				return NotFound();
+			}
+
+			return Created(GetDiscUri(artistId, newDiscId), null);
 		}
 
 		/// <summary>
@@ -145,7 +155,7 @@ namespace MusicDb.Api.Controllers
 		[SwaggerResponse(HttpStatusCode.NoContent, typeof(void))]
 		[SwaggerResponse(HttpStatusCode.Forbidden, typeof(void), Description = "Principal is not authorized for database modification.")]
 		[SwaggerResponse(HttpStatusCode.NotFound, typeof(void), Description = "Requested disc was not found.")]
-		public async Task<ActionResult> DeleteArtist(int artistId, int discId, CancellationToken cancellationToken)
+		public async Task<ActionResult> DeleteDisc(int artistId, int discId, CancellationToken cancellationToken)
 		{
 			try
 			{

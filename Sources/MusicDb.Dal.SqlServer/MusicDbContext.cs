@@ -9,6 +9,8 @@ namespace MusicDb.Dal.SqlServer
 
 		public DbSet<Disc> Discs { get; set; }
 
+		public DbSet<Song> Songs { get; set; }
+
 		public MusicDbContext(DbContextOptions<MusicDbContext> options)
 			: base(options)
 		{
@@ -25,6 +27,12 @@ namespace MusicDb.Dal.SqlServer
 			modelBuilder.Entity<Disc>()
 				.HasOne(d => d.Artist)
 				.WithMany(a => a.Discs)
+				.IsRequired();
+
+			modelBuilder.Entity<Song>().Property(e => e.Title).IsRequired();
+			modelBuilder.Entity<Song>()
+				.HasOne(s => s.Disc)
+				.WithMany(d => d.Songs)
 				.IsRequired();
 		}
 	}

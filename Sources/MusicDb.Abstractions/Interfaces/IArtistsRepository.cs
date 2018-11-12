@@ -7,7 +7,7 @@ namespace MusicDb.Abstractions.Interfaces
 {
 	public interface IArtistsRepository
 	{
-		Task CreateArtist(Artist artist, CancellationToken cancellationToken);
+		Task<int> CreateArtist(Artist artist, CancellationToken cancellationToken);
 
 		Task<ICollection<Artist>> GetAllArtists(CancellationToken cancellationToken);
 
