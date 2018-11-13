@@ -2,12 +2,12 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MusicDb.Abstractions.Exceptions;
 using MusicDb.Abstractions.Models;
 using MusicDb.Dal.SqlServer.Repositories;
+using MusicDb.Dal.SqlServer.Tests.Utility;
 
 namespace MusicDb.Dal.SqlServer.Tests.Repositories
 {
@@ -129,11 +129,11 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 
 			// Assert
 
-			Assert.AreEqual(0, artists.Count);
+			Assert.IsFalse(artists.Any());
 		}
 
 		[TestMethod]
-		public async Task GetArtist_IfArtistExist_ReturnsCorrectArtistData()
+		public async Task GetArtist_IfArtistExists_ReturnsCorrectArtistData()
 		{
 			// Arrange
 
@@ -290,19 +290,7 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 		private static (ArtistsRepository, DbContextOptions<MusicDbContext>) CreateTestTarget()
 #pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
 		{
-			var connection = new SqliteConnection("DataSource=:memory:");
-			connection.Open();
-
-			var options = new DbContextOptionsBuilder<MusicDbContext>()
-				.UseSqlite(connection)
-				.Options;
-
-			using (var initContext = new MusicDbContext(options))
-			{
-				initContext.Database.EnsureCreated();
-			}
-
-			var context = new MusicDbContext(options);
+			(var context, var options) = Utils.CreateTestContext();
 			return (new ArtistsRepository(context), options);
 		}
 	}
