@@ -13,10 +13,5 @@ namespace MusicDb.Dal.SqlServer.Tests.Utility
 
 			return context;
 		}
-
-		public static void Save(this MusicDbContext context)
-		{
-			context.SaveChanges();
-		}
 	}
 }

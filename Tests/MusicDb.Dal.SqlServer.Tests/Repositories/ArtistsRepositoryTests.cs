@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using MusicDb.Abstractions.Exceptions;
+using Moq;
 using MusicDb.Abstractions.Models;
 using MusicDb.Dal.SqlServer.Repositories;
 using MusicDb.Dal.SqlServer.Tests.Utility;
@@ -14,6 +14,12 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 	[TestClass]
 	public class ArtistsRepositoryTests
 	{
+		private Artist Artist => new Artist
+		{
+			Id = 1,
+			Name = "Nautilus Pompilius",
+		};
+
 		[TestMethod]
 		public async Task CreateArtist_IfArtistWithSuchNameDoesNotExist_AddsArtistSuccessfully()
 		{
@@ -24,7 +30,7 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 				Name = "Nautilus Pompilius",
 			};
 
-			(var target, var options) = CreateTestTarget();
+			var(target, options, _) = CreateTestTarget();
 
 			// Act
 
@@ -47,7 +53,7 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 				Name = "Lacuna Coil",
 			};
 
-			(var target, var options) = CreateTestTarget();
+			var(target, options, _) = CreateTestTarget();
 
 			// Act
 
@@ -76,7 +82,7 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 				Name = "Louna",
 			};
 
-			(var target, _) = CreateTestTarget();
+			var(target, _, _) = CreateTestTarget();
 
 			await target.CreateArtist(prevArtist, CancellationToken.None);
 
@@ -86,7 +92,7 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 		}
 
 		[TestMethod]
-		public async Task GetArtists_IfSomeArtistsExist_ReturnsAllArtists()
+		public async Task GetAllArtists_IfSomeArtistsExist_ReturnsAllArtists()
 		{
 			// Arrange
 
@@ -100,7 +106,7 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 				Name = "Korn",
 			};
 
-			(var target, _) = CreateTestTarget();
+			var(target, _, _) = CreateTestTarget();
 			await target.CreateArtist(artist1, CancellationToken.None);
 			await target.CreateArtist(artist2, CancellationToken.None);
 
@@ -117,11 +123,11 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 		}
 
 		[TestMethod]
-		public async Task GetArtists_IfNoArtistsExist_ReturnsEmptyCollection()
+		public async Task GetAllArtists_IfNoArtistsExist_ReturnsEmptyCollection()
 		{
 			// Arrange
 
-			(var target, _) = CreateTestTarget();
+			var(target, _, _) = CreateTestTarget();
 
 			// Act
 
@@ -133,165 +139,123 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 		}
 
 		[TestMethod]
-		public async Task GetArtist_IfArtistExists_ReturnsCorrectArtistData()
+		public async Task GetArtist_InvokesEntityLocatorCorrectly()
 		{
 			// Arrange
 
-			var existingArtist1 = new Artist
-			{
-				Name = "Epica",
-			};
+			var(target, _, entityLocatorStub) = CreateTestTarget();
 
-			var existingArtist2 = new Artist
-			{
-				Name = "Within Temptation",
-			};
+			var artist = new Artist();
 
-			(var target, _) = CreateTestTarget();
-			await target.CreateArtist(existingArtist1, CancellationToken.None);
-			await target.CreateArtist(existingArtist2, CancellationToken.None);
+			entityLocatorStub.Setup(x => x.FindArtist(123, false, It.IsAny<CancellationToken>()))
+				.ReturnsAsync(artist);
 
 			// Act
 
-			var foundArtist = await target.GetArtist(2, CancellationToken.None);
+			var returnedArtist = await target.GetArtist(123, CancellationToken.None);
 
 			// Assert
 
-			Assert.AreEqual("Within Temptation", foundArtist.Name);
+			Assert.AreSame(artist, returnedArtist);
 		}
 
 		[TestMethod]
-		public async Task GetArtist_IfArtistDoesNotExist_ThrowsNotFoundException()
+		public async Task UpdateArtist_InvokesEntityLocatorCorrectly()
 		{
 			// Arrange
 
-			var existingArtist = new Artist
-			{
-				Name = "Guano Apes",
-			};
+			var(target, _, entityLocatorMock) = CreateTestTarget();
 
-			(var target, _) = CreateTestTarget();
-			await target.CreateArtist(existingArtist, CancellationToken.None);
+			var artistId = await target.CreateArtist(Artist, CancellationToken.None);
 
-			// Act & Assert
-
-			await Assert.ThrowsExceptionAsync<NotFoundException>(() => target.GetArtist(2, CancellationToken.None));
-		}
-
-		[TestMethod]
-		public async Task UpdateArtist_IfArtistExist_UpdatesArtistDataCorrectly()
-		{
-			// Arrange
-
-			var existingArtist1 = new Artist
-			{
-				Name = "Linkin Park",
-			};
-
-			var existingArtist2 = new Artist
-			{
-				Name = "Prince",
-			};
-
-			var updatedArtist = new Artist
-			{
-				Id = 2,
-				Name = "The Artist Formerly Known as Prince",
-			};
-
-			(var target, var options) = CreateTestTarget();
-			await target.CreateArtist(existingArtist1, CancellationToken.None);
-			await target.CreateArtist(existingArtist2, CancellationToken.None);
+			var artist = Artist;
+			artist.Id = artistId;
 
 			// Act
 
-			await target.UpdateArtist(updatedArtist, CancellationToken.None);
+			await target.UpdateArtist(artist, CancellationToken.None);
+
+			// Assert
+
+			entityLocatorMock.Verify(x => x.FindArtist(artistId, false, It.IsAny<CancellationToken>()), Times.Once);
+		}
+
+		[TestMethod]
+		public async Task UpdateArtist_IfArtistExists_UpdateArtistDataCorrectly()
+		{
+			// Arrange
+
+			var(target, options, _) = CreateTestTarget();
+
+			var aritstId = await target.CreateArtist(Artist, CancellationToken.None);
+
+			var newArtistData = new Artist
+			{
+				Id = aritstId,
+				Name = "Some new name",
+			};
+
+			// Act
+
+			await target.UpdateArtist(newArtistData, CancellationToken.None);
 
 			// Assert
 
 			var context = new MusicDbContext(options);
-			var checkedArtist = context.Artists.Single(x => x.Id == 2);
-			Assert.AreEqual("The Artist Formerly Known as Prince", checkedArtist.Name);
+			var updatedArtist = context.Artists.Single();
+			Assert.AreEqual(aritstId, updatedArtist.Id);
+			Assert.AreEqual("Some new name", updatedArtist.Name);
 		}
 
 		[TestMethod]
-		public async Task UpdateArtist_IfArtistDoesNotExist_ThrowsNotFoundException()
+		public async Task DeleteArtist_InvokesEntityLocatorCorrectly()
 		{
 			// Arrange
 
-			var existingArtist = new Artist
-			{
-				Name = "Nightwish",
-			};
+			var(target, _, entityLocatorMock) = CreateTestTarget();
 
-			var updatedArtist = new Artist
-			{
-				Id = 2,
-				Name = "The Nightwish",
-			};
-
-			(var target, _) = CreateTestTarget();
-			await target.CreateArtist(existingArtist, CancellationToken.None);
-
-			// Act & Assert
-
-			await Assert.ThrowsExceptionAsync<NotFoundException>(() => target.UpdateArtist(updatedArtist, CancellationToken.None));
-		}
-
-		[TestMethod]
-		public async Task DeleteArtist_IfArtistExist_DeletesArtistCorrectly()
-		{
-			// Arrange
-
-			var existingArtist1 = new Artist
-			{
-				Name = "Lacrimosa",
-			};
-
-			var existingArtist2 = new Artist
-			{
-				Name = "Limp Bizkit",
-			};
-
-			(var target, var options) = CreateTestTarget();
-			await target.CreateArtist(existingArtist1, CancellationToken.None);
-			await target.CreateArtist(existingArtist2, CancellationToken.None);
+			var artistId = await target.CreateArtist(Artist, CancellationToken.None);
 
 			// Act
 
-			await target.DeleteArtist(2, CancellationToken.None);
+			await target.DeleteArtist(artistId, CancellationToken.None);
+
+			// Assert
+
+			entityLocatorMock.Verify(x => x.FindArtist(artistId, false, It.IsAny<CancellationToken>()), Times.Once);
+		}
+
+		[TestMethod]
+		public async Task DeleteArtist_IfArtistExists_DeletesArtist()
+		{
+			// Arrange
+
+			var(target, options, _) = CreateTestTarget();
+
+			var artistId = await target.CreateArtist(Artist, CancellationToken.None);
+
+			// Act
+
+			await target.DeleteArtist(artistId, CancellationToken.None);
 
 			// Assert
 
 			var context = new MusicDbContext(options);
-			Assert.AreEqual(1, context.Artists.Count());
-			Assert.AreEqual("Lacrimosa", context.Artists.Single().Name);
-		}
-
-		[TestMethod]
-		public async Task DeleteArtist_IfArtistDoesNotExist_ThrowsNotFoundException()
-		{
-			// Arrange
-
-			var existingArtist = new Artist
-			{
-				Name = "P.O.D.",
-			};
-
-			(var target, _) = CreateTestTarget();
-			await target.CreateArtist(existingArtist, CancellationToken.None);
-
-			// Act & Assert
-
-			await Assert.ThrowsExceptionAsync<NotFoundException>(() => target.DeleteArtist(2, CancellationToken.None));
+			Assert.IsFalse(context.Artists.Any());
 		}
 
 #pragma warning disable SA1008 // Opening parenthesis must be spaced correctly
-		private static (ArtistsRepository, DbContextOptions<MusicDbContext>) CreateTestTarget()
+		private static (ArtistsRepository, DbContextOptions<MusicDbContext>, Mock<IEntityLocator>) CreateTestTarget()
 #pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
 		{
-			(var context, var options) = Utils.CreateTestContext();
-			return (new ArtistsRepository(context), options);
+			var entityLocatorStub = new Mock<IEntityLocator>();
+
+			var(context, options) = Utils.CreateTestContext();
+
+			entityLocatorStub.Setup(x => x.FindArtist(It.IsAny<int>(), false, It.IsAny<CancellationToken>()))
+				.ReturnsAsync(() => context.Artists.Single());
+
+			return (new ArtistsRepository(context, entityLocatorStub.Object), options, entityLocatorStub);
 		}
 	}
 }

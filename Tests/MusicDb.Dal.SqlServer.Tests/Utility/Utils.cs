@@ -1,6 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using MusicDb.Dal.SqlServer.Repositories;
 
 namespace MusicDb.Dal.SqlServer.Tests.Utility
 {
@@ -23,12 +22,6 @@ namespace MusicDb.Dal.SqlServer.Tests.Utility
 			}
 
 			return (new MusicDbContext(options), options);
-		}
-
-		public static ArtistsRepository CreateArtistsRepository(DbContextOptions<MusicDbContext> options)
-		{
-			var dbContext = new MusicDbContext(options);
-			return new ArtistsRepository(dbContext);
 		}
 	}
 }

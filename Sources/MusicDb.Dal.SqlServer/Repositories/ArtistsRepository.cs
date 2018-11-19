@@ -16,9 +16,12 @@ namespace MusicDb.Dal.SqlServer.Repositories
 	{
 		private readonly MusicDbContext context;
 
-		public ArtistsRepository(MusicDbContext context)
+		private readonly IEntityLocator entityLocator;
+
+		public ArtistsRepository(MusicDbContext context, IEntityLocator entityLocator)
 		{
 			this.context = context ?? throw new ArgumentNullException(nameof(context));
+			this.entityLocator = entityLocator ?? throw new ArgumentNullException(nameof(entityLocator));
 		}
 
 		public async Task<int> CreateArtist(Artist artist, CancellationToken cancellationToken)
@@ -37,14 +40,14 @@ namespace MusicDb.Dal.SqlServer.Repositories
 				.ToListAsync(cancellationToken).ConfigureAwait(false);
 		}
 
-		public async Task<Artist> GetArtist(int artistId, CancellationToken cancellationToken)
+		public Task<Artist> GetArtist(int artistId, CancellationToken cancellationToken)
 		{
-			return await FindArtist(artistId, cancellationToken).ConfigureAwait(false);
+			return entityLocator.FindArtist(artistId, false, cancellationToken);
 		}
 
 		public async Task UpdateArtist(Artist artist, CancellationToken cancellationToken)
 		{
-			var artistEntity = await FindArtist(artist.Id, cancellationToken).ConfigureAwait(false);
+			var artistEntity = await entityLocator.FindArtist(artist.Id, false, cancellationToken).ConfigureAwait(false);
 			context.Entry(artistEntity).CurrentValues.SetValues(artist);
 
 			await SaveChanges(cancellationToken).ConfigureAwait(false);
@@ -52,7 +55,7 @@ namespace MusicDb.Dal.SqlServer.Repositories
 
 		public async Task DeleteArtist(int artistId, CancellationToken cancellationToken)
 		{
-			var artistEntity = await FindArtist(artistId, cancellationToken).ConfigureAwait(false);
+			var artistEntity = await entityLocator.FindArtist(artistId, false, cancellationToken).ConfigureAwait(false);
 			context.Artists.Remove(artistEntity);
 
 			await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -68,12 +71,6 @@ namespace MusicDb.Dal.SqlServer.Repositories
 			{
 				throw new DuplicateKeyException("Failed to save changes to the database", e);
 			}
-		}
-
-		private Task<Artist> FindArtist(int artistId, CancellationToken cancellationToken)
-		{
-			return context.Artists
-				.FindArtist(artistId, cancellationToken);
 		}
 	}
 }

@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using MusicDb.Abstractions.Exceptions;
+using Moq;
 using MusicDb.Abstractions.Models;
 using MusicDb.Dal.SqlServer.Repositories;
 using MusicDb.Dal.SqlServer.Tests.Utility;
@@ -13,50 +13,50 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 	[TestClass]
 	public class DiscsRepositoryTests
 	{
-		private Artist Artist1 => new Artist
+		private Artist Artist => new Artist
 		{
 			Id = 1,
-			Name = "Korn",
+			Name = "Guano Apes",
 		};
 
-		private Artist Artist2 => new Artist
+		private Disc Disc1 => new Disc
 		{
-			Id = 2,
-			Name = "Lacuna Coil",
+			Year = 1997,
+			Title = "Proud Like A God",
 		};
 
-		private Disc Disc11 => new Disc
+		private Disc Disc2 => new Disc
 		{
-			Year = 1999,
-			Title = "Issues",
-		};
-
-		private Disc Disc21 => new Disc
-		{
-			Year = 2008,
-			Title = "Shallow Life",
-		};
-
-		private Disc Disc22 => new Disc
-		{
-			Year = 2014,
-			Title = "Broken Crown Halo",
+			Year = 2000,
+			Title = "Don't Give Me Names",
 		};
 
 		[TestMethod]
-		public async Task CreateDisc_IfArtistExists_CreatesDiscSuccessfully()
+		public async Task CreateDisc_InvokesEntityLocatorCorrectly()
 		{
 			// Arrange
 
-			(var target, var options) = CreateTestTarget();
-
-			options.ToContext()
-				.WithArtists(Artist1, Artist2)
-				.Save();
+			var(target, _, entityLocatorMock) = CreateTestTarget();
 
 			// Act
 
-			await target.CreateDisc(Artist2.Id, Disc21, CancellationToken.None);
+			await target.CreateDisc(Artist.Id, Disc1, CancellationToken.None);
+
+			// Assert
+
+			entityLocatorMock.Verify(x => x.FindArtist(Artist.Id, true, It.IsAny<CancellationToken>()), Times.Once);
+		}
+
+		[TestMethod]
+		public async Task CreateDisc_ForExistingArtist_CreatesDiscSuccessfully()
+		{
+			// Arrange
+
+			var(target, options, _) = CreateTestTarget();
+
+			// Act
+
+			await target.CreateDisc(Artist.Id, Disc1, CancellationToken.None);
 
 			// Assert
 
@@ -64,9 +64,9 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 			var addedDisc = context.Discs
 				.Include(d => d.Artist)
 				.Single();
-			Assert.AreEqual(Disc21.Title, addedDisc.Title);
-			Assert.AreEqual(Disc21.Year, addedDisc.Year);
-			Assert.AreEqual(Artist2.Id, addedDisc.Artist.Id);
+			Assert.AreEqual(Disc1.Title, addedDisc.Title);
+			Assert.AreEqual(Disc1.Year, addedDisc.Year);
+			Assert.AreEqual(Artist.Id, addedDisc.Artist.Id);
 		}
 
 		[TestMethod]
@@ -74,15 +74,11 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 		{
 			// Arrange
 
-			(var target, var options) = CreateTestTarget();
-
-			options.ToContext()
-				.WithArtists(Artist1)
-				.Save();
+			var(target, options, _) = CreateTestTarget();
 
 			// Act
 
-			var discId = await target.CreateDisc(Artist1.Id, Disc11, CancellationToken.None);
+			var discId = await target.CreateDisc(Artist.Id, Disc1, CancellationToken.None);
 
 			// Assert
 
@@ -92,19 +88,19 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 		}
 
 		[TestMethod]
-		public async Task CreateDisc_IfArtistDoesNotExist_ThrowsNotFoundException()
+		public async Task GetAllArtistDiscs_InvokesEntityLocatorCorrectly()
 		{
 			// Arrange
 
-			(var target, var options) = CreateTestTarget();
+			var(target, _, entityLocatorMock) = CreateTestTarget();
 
-			options.ToContext()
-				.WithArtists(Artist1)
-				.Save();
+			// Act
 
-			// Act & Assert
+			await target.GetAllArtistDiscs(Artist.Id, CancellationToken.None);
 
-			await Assert.ThrowsExceptionAsync<NotFoundException>(() => target.CreateDisc(Artist2.Id, Disc21, CancellationToken.None));
+			// Assert
+
+			entityLocatorMock.Verify(x => x.FindArtist(Artist.Id, true, It.IsAny<CancellationToken>()), Times.Once);
 		}
 
 		[TestMethod]
@@ -112,26 +108,21 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 		{
 			// Arrange
 
-			(var target, var options) = CreateTestTarget();
+			var(target, _, _) = CreateTestTarget();
 
-			options.ToContext()
-				.WithArtists(Artist1, Artist2)
-				.Save();
-
-			await target.CreateDisc(Artist1.Id, Disc11, CancellationToken.None);
-			await target.CreateDisc(Artist2.Id, Disc21, CancellationToken.None);
-			await target.CreateDisc(Artist2.Id, Disc22, CancellationToken.None);
+			await target.CreateDisc(Artist.Id, Disc1, CancellationToken.None);
+			await target.CreateDisc(Artist.Id, Disc2, CancellationToken.None);
 
 			// Act
 
-			var discs = (await target.GetAllArtistDiscs(2, CancellationToken.None))
+			var discs = (await target.GetAllArtistDiscs(Artist.Id, CancellationToken.None))
 				.ToList();
 
 			// Assert
 
 			Assert.AreEqual(2, discs.Count);
-			Assert.AreEqual(Disc21.Title, discs[0].Title);
-			Assert.AreEqual(Disc22.Title, discs[1].Title);
+			Assert.AreEqual(Disc1.Title, discs[0].Title);
+			Assert.AreEqual(Disc2.Title, discs[1].Title);
 		}
 
 		[TestMethod]
@@ -139,17 +130,12 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 		{
 			// Arrange
 
-			(var target, var options) = CreateTestTarget();
-
-			options.ToContext()
-				.WithArtists(Artist1, Artist2)
-				.Save();
-
-			await target.CreateDisc(Artist1.Id, Disc11, CancellationToken.None);
+			var(target, _, _) = CreateTestTarget();
 
 			// Act
 
-			var discs = await target.GetAllArtistDiscs(Artist2.Id, CancellationToken.None);
+			var discs = (await target.GetAllArtistDiscs(Artist.Id, CancellationToken.None))
+				.ToList();
 
 			// Assert
 
@@ -157,79 +143,45 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 		}
 
 		[TestMethod]
-		public async Task GetAllArtistDiscs_IfArtistDoesNotExist_ThrowsNotFoundException()
+		public async Task GetDisc_InvokesEntityLocatorCorrectly()
 		{
 			// Arrange
 
-			(var target, var options) = CreateTestTarget();
+			var(target, _, entityLocatorStub) = CreateTestTarget();
 
-			options.ToContext()
-				.WithArtists(Artist1)
-				.Save();
+			var disc = new Disc();
 
-			// Act & Assert
-
-			await Assert.ThrowsExceptionAsync<NotFoundException>(() => target.GetAllArtistDiscs(Artist2.Id, CancellationToken.None));
-		}
-
-		[TestMethod]
-		public async Task GetDisc_IfDiscExists_ReturnsDiscData()
-		{
-			// Arrange
-
-			(var target, var options) = CreateTestTarget();
-
-			options.ToContext()
-				.WithArtists(Artist1, Artist2)
-				.Save();
-
-			await target.CreateDisc(Artist1.Id, Disc11, CancellationToken.None);
-			await target.CreateDisc(Artist2.Id, Disc21, CancellationToken.None);
-			var discId = await target.CreateDisc(Artist2.Id, Disc22, CancellationToken.None);
+			entityLocatorStub.Setup(x => x.FindArtistDisc(Artist.Id, 123, false, It.IsAny<CancellationToken>()))
+				.ReturnsAsync(disc);
 
 			// Act
 
-			var disc = await target.GetDisc(Artist2.Id, discId, CancellationToken.None);
+			var returnedDisc = await target.GetDisc(Artist.Id, 123, CancellationToken.None);
 
 			// Assert
 
-			Assert.AreEqual(Disc22.Title, disc.Title);
+			Assert.AreSame(disc, returnedDisc);
 		}
 
 		[TestMethod]
-		public async Task GetDisc_IfDiscDoesNotExist_ThrowsNotFoundException()
+		public async Task UpdateDisc_InvokesEntityLocatorCorrectly()
 		{
 			// Arrange
 
-			(var target, var options) = CreateTestTarget();
+			var(target, _, entityLocatorMock) = CreateTestTarget();
 
-			options.ToContext()
-				.WithArtists(Artist1)
-				.Save();
+			var discId = await target.CreateDisc(Artist.Id, Disc1, CancellationToken.None);
 
-			await target.CreateDisc(Artist1.Id, Disc11, CancellationToken.None);
+			var disc = Disc1;
+			disc.Id = discId;
 
-			// Act & Assert
+			// Act
 
-			await Assert.ThrowsExceptionAsync<NotFoundException>(() => target.GetDisc(Artist1.Id, 777, CancellationToken.None));
-		}
+			await target.UpdateDisc(Artist.Id, disc, CancellationToken.None);
 
-		[TestMethod]
-		public async Task GetDisc_IfDiscDoesNotBelongToArtist_ThrowsNotFoundException()
-		{
-			// Arrange
+			// Assert
 
-			(var target, var options) = CreateTestTarget();
-
-			options.ToContext()
-				.WithArtists(Artist1, Artist2)
-				.Save();
-
-			var discId = await target.CreateDisc(Artist1.Id, Disc11, CancellationToken.None);
-
-			// Act & Assert
-
-			await Assert.ThrowsExceptionAsync<NotFoundException>(() => target.GetDisc(Artist2.Id, discId, CancellationToken.None));
+			entityLocatorMock.Verify(x => x.FindArtistDisc(Artist.Id, discId, false, It.IsAny<CancellationToken>()), Times.Once);
 		}
 
 		[TestMethod]
@@ -237,15 +189,9 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 		{
 			// Arrange
 
-			(var target, var options) = CreateTestTarget();
+			var(target, options, _) = CreateTestTarget();
 
-			options.ToContext()
-				.WithArtists(Artist1, Artist2)
-				.Save();
-
-			await target.CreateDisc(Artist1.Id, Disc11, CancellationToken.None);
-			await target.CreateDisc(Artist2.Id, Disc21, CancellationToken.None);
-			var discId = await target.CreateDisc(Artist2.Id, Disc22, CancellationToken.None);
+			var discId = await target.CreateDisc(Artist.Id, Disc1, CancellationToken.None);
 
 			var newDiscData = new Disc
 			{
@@ -256,64 +202,33 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 
 			// Act
 
-			await target.UpdateDisc(Artist2.Id, newDiscData, CancellationToken.None);
+			await target.UpdateDisc(Artist.Id, newDiscData, CancellationToken.None);
 
 			// Assert
 
 			var context = new MusicDbContext(options);
-			var updatedDisc = context.Discs.Single(d => d.Id == discId);
+			var updatedDisc = context.Discs.Single();
+			Assert.AreEqual(discId, updatedDisc.Id);
 			Assert.AreEqual("Some new title", updatedDisc.Title);
 			Assert.AreEqual(2018, updatedDisc.Year);
 		}
 
 		[TestMethod]
-		public async Task UpdateDisc_IfDiscDoesNotExist_ThrowsNotFoundException()
+		public async Task DeleteDisc_InvokesEntityLocatorCorrectly()
 		{
 			// Arrange
 
-			(var target, var options) = CreateTestTarget();
+			var(target, _, entityLocatorMock) = CreateTestTarget();
 
-			options.ToContext()
-				.WithArtists(Artist1)
-				.Save();
+			var discId = await target.CreateDisc(Artist.Id, Disc1, CancellationToken.None);
 
-			await target.CreateDisc(Artist1.Id, Disc11, CancellationToken.None);
+			// Act
 
-			var newDiscData = new Disc
-			{
-				Id = 777,
-				Title = "Some new title",
-				Year = 2018,
-			};
+			await target.DeleteDisc(Artist.Id, discId, CancellationToken.None);
 
-			// Act & Assert
+			// Assert
 
-			await Assert.ThrowsExceptionAsync<NotFoundException>(() => target.UpdateDisc(Artist1.Id, newDiscData, CancellationToken.None));
-		}
-
-		[TestMethod]
-		public async Task UpdateDisc_IfDiscDoesNotBelongToArtist_ThrowsNotFoundException()
-		{
-			// Arrange
-
-			(var target, var options) = CreateTestTarget();
-
-			options.ToContext()
-				.WithArtists(Artist1, Artist2)
-				.Save();
-
-			var discId = await target.CreateDisc(Artist1.Id, Disc11, CancellationToken.None);
-
-			var newDiscData = new Disc
-			{
-				Id = discId,
-				Title = "Some new title",
-				Year = 2018,
-			};
-
-			// Act & Assert
-
-			await Assert.ThrowsExceptionAsync<NotFoundException>(() => target.UpdateDisc(Artist2.Id, newDiscData, CancellationToken.None));
+			entityLocatorMock.Verify(x => x.FindArtistDisc(Artist.Id, discId, false, It.IsAny<CancellationToken>()), Times.Once);
 		}
 
 		[TestMethod]
@@ -321,72 +236,47 @@ namespace MusicDb.Dal.SqlServer.Tests.Repositories
 		{
 			// Arrange
 
-			(var target, var options) = CreateTestTarget();
+			var(target, options, _) = CreateTestTarget();
 
-			options.ToContext()
-				.WithArtists(Artist1, Artist2)
-				.Save();
-
-			await target.CreateDisc(Artist1.Id, Disc11, CancellationToken.None);
-			await target.CreateDisc(Artist2.Id, Disc21, CancellationToken.None);
-			var discId = await target.CreateDisc(Artist2.Id, Disc22, CancellationToken.None);
+			var discId = await target.CreateDisc(Artist.Id, Disc1, CancellationToken.None);
 
 			// Act
 
-			await target.DeleteDisc(Artist2.Id, discId, CancellationToken.None);
+			await target.DeleteDisc(Artist.Id, discId, CancellationToken.None);
 
 			// Assert
 
 			var context = new MusicDbContext(options);
+			Assert.IsFalse(context.Discs.Any());
 			var artist = context.Artists
 				.Include(a => a.Discs)
-				.Single(d => d.Id == Artist2.Id);
-			Assert.AreEqual(1, artist.Discs.Count);
-			Assert.AreEqual(Disc21.Title, artist.Discs.Single().Title);
-		}
-
-		[TestMethod]
-		public async Task DeleteDisc_IfDiscDoesNotExist_ThrowsNotFoundException()
-		{
-			// Arrange
-
-			(var target, var options) = CreateTestTarget();
-
-			options.ToContext()
-				.WithArtists(Artist1)
-				.Save();
-
-			await target.CreateDisc(Artist1.Id, Disc11, CancellationToken.None);
-
-			// Act & Assert
-
-			await Assert.ThrowsExceptionAsync<NotFoundException>(() => target.DeleteDisc(Artist1.Id, 777, CancellationToken.None));
-		}
-
-		[TestMethod]
-		public async Task DeleteDisc_IfDiscDoesNotBelongToArtist_ThrowsNotFoundException()
-		{
-			// Arrange
-
-			(var target, var options) = CreateTestTarget();
-
-			options.ToContext()
-				.WithArtists(Artist1, Artist2)
-				.Save();
-
-			var discId = await target.CreateDisc(Artist1.Id, Disc11, CancellationToken.None);
-
-			// Act & Assert
-
-			await Assert.ThrowsExceptionAsync<NotFoundException>(() => target.DeleteDisc(Artist2.Id, discId, CancellationToken.None));
+				.Single();
+			Assert.IsFalse(artist.Discs.Any());
 		}
 
 #pragma warning disable SA1008 // Opening parenthesis must be spaced correctly
-		private static (DiscsRepository, DbContextOptions<MusicDbContext>) CreateTestTarget()
+		private (DiscsRepository, DbContextOptions<MusicDbContext>, Mock<IEntityLocator>) CreateTestTarget()
 #pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
 		{
-			(var context, var options) = Utils.CreateTestContext();
-			return (new DiscsRepository(context), options);
+			var entityLocatorStub = new Mock<IEntityLocator>();
+
+			var(context, options) = Utils.CreateTestContext();
+
+			var seedContext = new MusicDbContext(options);
+			seedContext
+				.WithArtists(Artist)
+				.SaveChanges();
+
+			entityLocatorStub.Setup(x => x.FindArtist(It.IsAny<int>(), true, It.IsAny<CancellationToken>()))
+				.ReturnsAsync(() =>
+					context.Artists
+						.Include(a => a.Discs)
+						.Single());
+
+			entityLocatorStub.Setup(x => x.FindArtistDisc(It.IsAny<int>(), It.IsAny<int>(), false, It.IsAny<CancellationToken>()))
+				.ReturnsAsync(() => context.Discs.Single());
+
+			return (new DiscsRepository(context, entityLocatorStub.Object), options, entityLocatorStub);
 		}
 	}
 }

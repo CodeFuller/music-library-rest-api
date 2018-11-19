@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using MusicDb.Abstractions.Interfaces;
 using MusicDb.Abstractions.Models;
-using MusicDb.Dal.SqlServer.Internal;
 
 namespace MusicDb.Dal.SqlServer.Repositories
 {
@@ -13,14 +11,17 @@ namespace MusicDb.Dal.SqlServer.Repositories
 	{
 		private readonly MusicDbContext context;
 
-		public DiscsRepository(MusicDbContext context)
+		private readonly IEntityLocator entityLocator;
+
+		public DiscsRepository(MusicDbContext context, IEntityLocator entityLocator)
 		{
 			this.context = context ?? throw new ArgumentNullException(nameof(context));
+			this.entityLocator = entityLocator ?? throw new ArgumentNullException(nameof(entityLocator));
 		}
 
 		public async Task<int> CreateDisc(int artistId, Disc disc, CancellationToken cancellationToken)
 		{
-			var artist = await FindArtist(artistId, cancellationToken).ConfigureAwait(false);
+			var artist = await entityLocator.FindArtist(artistId, true, cancellationToken).ConfigureAwait(false);
 			artist.Discs.Add(disc);
 
 			await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -30,19 +31,18 @@ namespace MusicDb.Dal.SqlServer.Repositories
 
 		public async Task<ICollection<Disc>> GetAllArtistDiscs(int artistId, CancellationToken cancellationToken)
 		{
-			var artist = await FindArtist(artistId, cancellationToken).ConfigureAwait(false);
-
+			var artist = await entityLocator.FindArtist(artistId, true, cancellationToken).ConfigureAwait(false);
 			return artist.Discs;
 		}
 
-		public async Task<Disc> GetDisc(int artistId, int discId, CancellationToken cancellationToken)
+		public Task<Disc> GetDisc(int artistId, int discId, CancellationToken cancellationToken)
 		{
-			return await FindArtistDisc(artistId, discId, cancellationToken).ConfigureAwait(false);
+			return entityLocator.FindArtistDisc(artistId, discId, false, cancellationToken);
 		}
 
 		public async Task UpdateDisc(int artistId, Disc disc, CancellationToken cancellationToken)
 		{
-			var discEntity = await FindArtistDisc(artistId, disc.Id, cancellationToken).ConfigureAwait(false);
+			var discEntity = await entityLocator.FindArtistDisc(artistId, disc.Id, false, cancellationToken).ConfigureAwait(false);
 			context.Entry(discEntity).CurrentValues.SetValues(disc);
 
 			await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -50,24 +50,10 @@ namespace MusicDb.Dal.SqlServer.Repositories
 
 		public async Task DeleteDisc(int artistId, int discId, CancellationToken cancellationToken)
 		{
-			var discEntity = await FindArtistDisc(artistId, discId, cancellationToken).ConfigureAwait(false);
+			var discEntity = await entityLocator.FindArtistDisc(artistId, discId, false, cancellationToken).ConfigureAwait(false);
 			context.Discs.Remove(discEntity);
 
 			await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-		}
-
-		private Task<Artist> FindArtist(int artistId, CancellationToken cancellationToken)
-		{
-			return context.Artists
-				.Include(a => a.Discs)
-				.FindArtist(artistId, cancellationToken);
-		}
-
-		private Task<Disc> FindArtistDisc(int artistId, int discId, CancellationToken cancellationToken)
-		{
-			return context.Discs
-				.Include(d => d.Artist)
-				.FindArtistDisc(artistId, discId, cancellationToken);
 		}
 	}
 }
