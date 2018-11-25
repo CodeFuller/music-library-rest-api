@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{5C8EF6C1
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MusicDb.Dal.SqlServer.Tests", "Tests\MusicDb.Dal.SqlServer.Tests\MusicDb.Dal.SqlServer.Tests.csproj", "{FEE41DB6-9CB0-4E02-ACA4-EA1A3D5104ED}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MusicDb.Api.Tests", "Tests\MusicDb.Api.Tests\MusicDb.Api.Tests.csproj", "{91DC63AE-A067-4F93-BBE4-2F386AF791ED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{FEE41DB6-9CB0-4E02-ACA4-EA1A3D5104ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FEE41DB6-9CB0-4E02-ACA4-EA1A3D5104ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FEE41DB6-9CB0-4E02-ACA4-EA1A3D5104ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91DC63AE-A067-4F93-BBE4-2F386AF791ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91DC63AE-A067-4F93-BBE4-2F386AF791ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91DC63AE-A067-4F93-BBE4-2F386AF791ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91DC63AE-A067-4F93-BBE4-2F386AF791ED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -53,6 +59,7 @@ Global
 		{28FDF560-CEB8-4966-87B9-FEB302E193D9} = {5FF4B216-DC02-4B61-8FC7-ADBEF7F7445C}
 		{E459D2C6-B489-4202-A778-DC2CDCA665B6} = {5FF4B216-DC02-4B61-8FC7-ADBEF7F7445C}
 		{FEE41DB6-9CB0-4E02-ACA4-EA1A3D5104ED} = {5C8EF6C1-399B-4D84-8035-7FD50920FA15}
+		{91DC63AE-A067-4F93-BBE4-2F386AF791ED} = {5C8EF6C1-399B-4D84-8035-7FD50920FA15}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3A482ED7-EF50-4A83-95CD-A2D2E4C48B8C}

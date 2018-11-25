@@ -62,7 +62,7 @@ namespace MusicDb.Api.Controllers
 			try
 			{
 				var artist = await repository.GetArtist(artistId, cancellationToken).ConfigureAwait(false);
-				return CreateArtistDto(artist);
+				return Ok(CreateArtistDto(artist));
 			}
 			catch (NotFoundException e)
 			{
