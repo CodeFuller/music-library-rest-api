@@ -11,7 +11,7 @@ namespace MusicDb.Dal.SqlServer
 
 		public DbSet<Song> Songs { get; set; }
 
-		public MusicDbContext(DbContextOptions<MusicDbContext> options)
+		public MusicDbContext(DbContextOptions options)
 			: base(options)
 		{
 		}

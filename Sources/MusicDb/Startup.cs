@@ -9,6 +9,7 @@ using MusicDb.Abstractions.Interfaces;
 using MusicDb.Abstractions.Settings;
 using MusicDb.Api;
 using MusicDb.Dal.SqlServer;
+using MusicDb.Dal.SqlServer.Internal;
 using MusicDb.Dal.SqlServer.Repositories;
 using NJsonSchema;
 using NSwag.AspNetCore;
@@ -17,12 +18,12 @@ namespace MusicDb
 {
 	public class Startup
 	{
+		public IConfiguration Configuration { get; }
+
 		public Startup(IConfiguration configuration)
 		{
 			Configuration = configuration;
 		}
-
-		public IConfiguration Configuration { get; }
 
 		public void ConfigureServices(IServiceCollection services)
 		{
@@ -42,6 +43,7 @@ namespace MusicDb
 			services.AddTransient<IArtistsRepository, ArtistsRepository>();
 			services.AddTransient<IDiscsRepository, DiscsRepository>();
 			services.AddTransient<ISongsRepository, SongsRepository>();
+			services.AddTransient<IEntityLocator, EntityLocator>();
 
 			var connectionString = Configuration.GetConnectionString("musicDB");
 			if (String.IsNullOrWhiteSpace(connectionString))

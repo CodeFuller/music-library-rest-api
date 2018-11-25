@@ -15,6 +15,7 @@
     <Rule Id="SA1652" Action="None" Description="All diagnostics of XML documentation comments has been disabled due to the current project configuration."/>
   </Rules>
   <Rules AnalyzerId="Microsoft.CodeAnalysis.FxCopAnalyzers" RuleNamespace="Microsoft.CodeAnalysis.FxCopAnalyzers">
+    <Rule Id="CA1001" Action="None" Description="Types that own disposable fields should be disposable."/>
     <Rule Id="CA1707" Action="None" Description="Identifiers should not contain underscores."/>
     <Rule Id="CA2007" Action="None" Description="Do not directly await a Task without calling ConfigureAwait."/>
   </Rules>
