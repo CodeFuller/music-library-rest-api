@@ -1,8 +1,11 @@
-﻿using System.Data.Common;
+﻿using System;
+using System.Data.Common;
+using System.Data.SqlClient;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MusicDb.Abstractions.Models;
 using MusicDb.Dal.SqlServer;
@@ -11,6 +14,8 @@ namespace MusicDb.Api.IntegrationTests
 {
 	public class CustomWebApplicationFactory : WebApplicationFactory<Startup>
 	{
+		private DatabaseSettings dbSettings;
+
 		private DbConnection connection;
 
 		protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -37,15 +42,51 @@ namespace MusicDb.Api.IntegrationTests
 		{
 			if (connection == null)
 			{
-				connection = new SqliteConnection("DataSource=:memory:");
+				var configBuilder = new ConfigurationBuilder();
+				configBuilder.AddJsonFile("TestRunSettings.json", optional: false);
+				var configuration = configBuilder.Build();
+
+				dbSettings = new DatabaseSettings();
+				configuration.Bind("database", dbSettings);
+
+				connection = CreateDbConnection(dbSettings.ConnectionString);
 				connection.Open();
 			}
 
-			optionsBuilder.UseSqlite(connection);
+			var(_, dbContextOptionsConfig) = GetDbInitializers();
+			dbContextOptionsConfig(connection, optionsBuilder);
 		}
 
-		private static void SeedData(MusicDbContext context)
+		private DbConnection CreateDbConnection(string connectionString)
 		{
+			var(connectionFactory, _) = GetDbInitializers();
+			return connectionFactory(connectionString);
+		}
+
+#pragma warning disable SA1008 // Opening parenthesis must be spaced correctly
+		private (Func<string, DbConnection>, Action<DbConnection, DbContextOptionsBuilder>) GetDbInitializers()
+#pragma warning restore SA1008 // Opening parenthesis must be spaced correctly
+		{
+			switch (dbSettings.DbProviderType)
+			{
+				case DbProviderType.Sqlite:
+					return (cs => new SqliteConnection(cs), (conn, ob) => ob.UseSqlite(conn));
+
+				case DbProviderType.SqlServer:
+					return (cs => new SqlConnection(cs), (conn, ob) => ob.UseSqlServer(conn));
+
+				default:
+					throw new InvalidOperationException($"DB Provider {dbSettings.DbProviderType} is not supported");
+			}
+		}
+
+		private void SeedData(MusicDbContext context)
+		{
+			// Deleting any existing data.
+			// This should be done before resetting currenty identity value.
+			context.Artists.RemoveRange(context.Artists);
+			context.SaveChanges();
+
 			var artist1 = new Artist
 			{
 				Id = 1,
@@ -58,10 +99,21 @@ namespace MusicDb.Api.IntegrationTests
 				Name = "Guano Apes",
 			};
 
-			context.Artists.RemoveRange(context.Artists);
-			context.Artists.AddRange(artist1, artist2);
+			var setIdentityInsert = dbSettings.DbProviderType == DbProviderType.SqlServer;
+			if (setIdentityInsert)
+			{
+				// https://docs.microsoft.com/en-us/ef/core/saving/explicit-values-generated-properties#explicit-values-into-sql-server-identity-columns
+				context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT dbo.Artists ON");
+				context.Database.ExecuteSqlCommand("DBCC CHECKIDENT ('Artists', RESEED, 1)");
+			}
 
+			context.Artists.AddRange(artist1, artist2);
 			context.SaveChanges();
+
+			if (setIdentityInsert)
+			{
+				context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT dbo.Artists OFF");
+			}
 		}
 	}
 }
