@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -43,7 +41,7 @@ namespace MusicDb.Api.Tests.Controllers
 				.ReturnsAsync(artists);
 
 			var target = new ArtistsController(repositoryStub.Object, Mock.Of<ILogger<ArtistsController>>());
-			SetupControllerContext(target);
+			target.StubControllerContext();
 
 			// Act
 
@@ -86,7 +84,7 @@ namespace MusicDb.Api.Tests.Controllers
 			repositoryStub.Setup(x => x.GetArtist(123, It.IsAny<CancellationToken>())).ReturnsAsync(artist);
 
 			var target = new ArtistsController(repositoryStub.Object, Mock.Of<ILogger<ArtistsController>>());
-			SetupControllerContext(target);
+			target.StubControllerContext();
 
 			// Act
 
@@ -115,7 +113,7 @@ namespace MusicDb.Api.Tests.Controllers
 			repositoryStub.Setup(x => x.GetArtist(123, It.IsAny<CancellationToken>())).ThrowsAsync(new NotFoundException());
 
 			var target = new ArtistsController(repositoryStub.Object, Mock.Of<ILogger<ArtistsController>>());
-			SetupControllerContext(target);
+			target.StubControllerContext();
 
 			// Act
 
@@ -139,7 +137,7 @@ namespace MusicDb.Api.Tests.Controllers
 			var repositoryMock = new Mock<IArtistsRepository>();
 
 			var target = new ArtistsController(repositoryMock.Object, Mock.Of<ILogger<ArtistsController>>());
-			SetupControllerContext(target);
+			target.StubControllerContext();
 
 			// Act
 
@@ -161,7 +159,7 @@ namespace MusicDb.Api.Tests.Controllers
 			};
 
 			var target = new ArtistsController(Mock.Of<IArtistsRepository>(), Mock.Of<ILogger<ArtistsController>>());
-			SetupControllerContext(target);
+			target.StubControllerContext();
 
 			// Act
 
@@ -188,7 +186,7 @@ namespace MusicDb.Api.Tests.Controllers
 			repositoryStub.Setup(x => x.CreateArtist(It.IsAny<Artist>(), It.IsAny<CancellationToken>())).ThrowsAsync(new DuplicateKeyException());
 
 			var target = new ArtistsController(repositoryStub.Object, Mock.Of<ILogger<ArtistsController>>());
-			SetupControllerContext(target);
+			target.StubControllerContext();
 
 			// Act
 
@@ -212,7 +210,7 @@ namespace MusicDb.Api.Tests.Controllers
 			var repositoryMock = new Mock<IArtistsRepository>();
 
 			var target = new ArtistsController(repositoryMock.Object, Mock.Of<ILogger<ArtistsController>>());
-			SetupControllerContext(target);
+			target.StubControllerContext();
 
 			// Act
 
@@ -234,7 +232,7 @@ namespace MusicDb.Api.Tests.Controllers
 			};
 
 			var target = new ArtistsController(Mock.Of<IArtistsRepository>(), Mock.Of<ILogger<ArtistsController>>());
-			SetupControllerContext(target);
+			target.StubControllerContext();
 
 			// Act
 
@@ -259,7 +257,7 @@ namespace MusicDb.Api.Tests.Controllers
 			repositoryStub.Setup(x => x.UpdateArtist(It.IsAny<Artist>(), It.IsAny<CancellationToken>())).ThrowsAsync(new NotFoundException());
 
 			var target = new ArtistsController(repositoryStub.Object, Mock.Of<ILogger<ArtistsController>>());
-			SetupControllerContext(target);
+			target.StubControllerContext();
 
 			// Act
 
@@ -284,7 +282,7 @@ namespace MusicDb.Api.Tests.Controllers
 			repositoryStub.Setup(x => x.UpdateArtist(It.IsAny<Artist>(), It.IsAny<CancellationToken>())).ThrowsAsync(new DuplicateKeyException());
 
 			var target = new ArtistsController(repositoryStub.Object, Mock.Of<ILogger<ArtistsController>>());
-			SetupControllerContext(target);
+			target.StubControllerContext();
 
 			// Act
 
@@ -303,7 +301,7 @@ namespace MusicDb.Api.Tests.Controllers
 			var repositoryMock = new Mock<IArtistsRepository>();
 
 			var target = new ArtistsController(repositoryMock.Object, Mock.Of<ILogger<ArtistsController>>());
-			SetupControllerContext(target);
+			target.StubControllerContext();
 
 			// Act
 
@@ -320,7 +318,7 @@ namespace MusicDb.Api.Tests.Controllers
 			// Arrange
 
 			var target = new ArtistsController(Mock.Of<IArtistsRepository>(), Mock.Of<ILogger<ArtistsController>>());
-			SetupControllerContext(target);
+			target.StubControllerContext();
 
 			// Act
 
@@ -340,7 +338,7 @@ namespace MusicDb.Api.Tests.Controllers
 			repositoryStub.Setup(x => x.DeleteArtist(It.IsAny<int>(), It.IsAny<CancellationToken>())).ThrowsAsync(new NotFoundException());
 
 			var target = new ArtistsController(repositoryStub.Object, Mock.Of<ILogger<ArtistsController>>());
-			SetupControllerContext(target);
+			target.StubControllerContext();
 
 			// Act
 
@@ -349,18 +347,6 @@ namespace MusicDb.Api.Tests.Controllers
 			// Assert
 
 			Assert.IsInstanceOfType(result, typeof(NotFoundResult));
-		}
-
-		private static void SetupControllerContext(ArtistsController controller)
-		{
-			var httpContextStub = new Mock<HttpContext>();
-			httpContextStub.Setup(x => x.Request).Returns(Mock.Of<HttpRequest>());
-
-			controller.ControllerContext.HttpContext = httpContextStub.Object;
-
-			var urlHelperStub = new Mock<IUrlHelper>();
-			urlHelperStub.Setup(x => x.Action(It.IsAny<UrlActionContext>())).Returns("/SomeUri");
-			controller.Url = urlHelperStub.Object;
 		}
 	}
 }

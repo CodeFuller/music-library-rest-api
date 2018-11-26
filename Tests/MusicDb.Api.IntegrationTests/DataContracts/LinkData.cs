@@ -5,10 +5,10 @@ namespace MusicDb.Api.IntegrationTests.DataContracts
 	[DataContract]
 	public class LinkData
 	{
-		[DataMember]
+		[DataMember(Name = "rel")]
 		public string Rel { get; set; }
 
-		[DataMember]
+		[DataMember(Name = "href")]
 		public string Href { get; set; }
 	}
 }

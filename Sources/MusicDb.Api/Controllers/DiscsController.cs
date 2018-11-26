@@ -71,7 +71,7 @@ namespace MusicDb.Api.Controllers
 			{
 				var disc = await discsRepository.GetDisc(artistId, discId, cancellationToken).ConfigureAwait(false);
 
-				return CreateDiscDto(disc);
+				return Ok(CreateDiscDto(disc));
 			}
 			catch (NotFoundException e)
 			{

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data.Common;
 using System.Data.SqlClient;
+using System.Linq;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -82,11 +83,19 @@ namespace MusicDb.Api.IntegrationTests
 
 		private void SeedData(MusicDbContext context)
 		{
+			var setIdentityInsert = dbSettings.DbProviderType == DbProviderType.SqlServer;
+
 			// Deleting any existing data.
 			// This should be done before resetting currenty identity value.
 			context.Artists.RemoveRange(context.Artists);
 			context.SaveChanges();
 
+			SeedArtistsData(context, setIdentityInsert);
+			SeedDiscsData(context, setIdentityInsert);
+		}
+
+		private void SeedArtistsData(MusicDbContext context, bool setIdentityInsert)
+		{
 			var artist1 = new Artist
 			{
 				Id = 1,
@@ -99,7 +108,6 @@ namespace MusicDb.Api.IntegrationTests
 				Name = "Guano Apes",
 			};
 
-			var setIdentityInsert = dbSettings.DbProviderType == DbProviderType.SqlServer;
 			if (setIdentityInsert)
 			{
 				// https://docs.microsoft.com/en-us/ef/core/saving/explicit-values-generated-properties#explicit-values-into-sql-server-identity-columns
@@ -113,6 +121,52 @@ namespace MusicDb.Api.IntegrationTests
 			if (setIdentityInsert)
 			{
 				context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT dbo.Artists OFF");
+			}
+		}
+
+		private void SeedDiscsData(MusicDbContext context, bool setIdentityInsert)
+		{
+			var disc11 = new Disc
+			{
+				Id = 11,
+				Title = "Follow The Leader",
+				Year = 1998,
+			};
+
+			var disc21 = new Disc
+			{
+				Id = 21,
+				Title = "Proud Like A God",
+				Year = 1997,
+			};
+
+			var disc22 = new Disc
+			{
+				Id = 22,
+				Title = "Don't Give Me Names",
+				Year = null, // This disc is intentionally left with blank year
+			};
+
+			if (setIdentityInsert)
+			{
+				context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT dbo.Discs ON");
+				context.Database.ExecuteSqlCommand("DBCC CHECKIDENT ('Discs', RESEED, 1)");
+			}
+
+			var artistsQueryAble = context.Artists
+				.Include(a => a.Discs);
+
+			artistsQueryAble.Single(a => a.Id == 1)
+				.Discs.Add(disc11);
+
+			artistsQueryAble.Single(a => a.Id == 2)
+				.Discs.AddRange(new[] { disc21, disc22 });
+
+			context.SaveChanges();
+
+			if (setIdentityInsert)
+			{
+				context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT dbo.Discs OFF");
 			}
 		}
 	}

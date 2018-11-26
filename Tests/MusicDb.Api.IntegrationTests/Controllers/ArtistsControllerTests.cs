@@ -128,7 +128,7 @@ namespace MusicDb.Api.IntegrationTests.Controllers
 		}
 
 		[TestMethod]
-		public async Task DeleteArtist_UpdatesArtistDataCorrectly()
+		public async Task DeleteArtist_DeletesArtistCorrectly()
 		{
 			// Arrange
 
