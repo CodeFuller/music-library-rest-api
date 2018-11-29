@@ -220,7 +220,7 @@ namespace MusicDb.Api.Tests.Controllers
 		}
 
 		[TestMethod]
-		public async Task CreateDisc_IfDiscWasNotFound_ReturnsNotFoundResult()
+		public async Task CreateDisc_IfArtistWasNotFound_ReturnsNotFoundResult()
 		{
 			// Arrange
 

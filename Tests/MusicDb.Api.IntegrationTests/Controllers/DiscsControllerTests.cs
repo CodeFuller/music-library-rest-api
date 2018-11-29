@@ -135,7 +135,7 @@ namespace MusicDb.Api.IntegrationTests.Controllers
 		}
 
 		[TestMethod]
-		public async Task DeleteDusc_DeletesDiscCorrectly()
+		public async Task DeleteDisc_DeletesDiscCorrectly()
 		{
 			// Arrange
 

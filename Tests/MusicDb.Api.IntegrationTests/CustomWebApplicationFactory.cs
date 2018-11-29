@@ -92,6 +92,7 @@ namespace MusicDb.Api.IntegrationTests
 
 			SeedArtistsData(context, setIdentityInsert);
 			SeedDiscsData(context, setIdentityInsert);
+			SeedSongsData(context, setIdentityInsert);
 		}
 
 		private void SeedArtistsData(MusicDbContext context, bool setIdentityInsert)
@@ -167,6 +168,66 @@ namespace MusicDb.Api.IntegrationTests
 			if (setIdentityInsert)
 			{
 				context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT dbo.Discs OFF");
+			}
+		}
+
+		private void SeedSongsData(MusicDbContext context, bool setIdentityInsert)
+		{
+			var song111 = new Song
+			{
+				Id = 111,
+				Title = "It's On!",
+				TrackNumber = 1,
+				Duration = new TimeSpan(0, 4, 28),
+			};
+
+			var song211 = new Song
+			{
+				Id = 21,
+				Title = "Open Your Eyes",
+				TrackNumber = 1,
+				Duration = new TimeSpan(0, 3, 9),
+			};
+
+			var song221 = new Song
+			{
+				Id = 221,
+				Title = "Innocent Greed",
+				TrackNumber = 1,
+				Duration = new TimeSpan(0, 3, 51),
+			};
+
+			var song222 = new Song
+			{
+				Id = 222,
+				Title = "No Speech",
+				TrackNumber = null, // This data was intentionally left blank.
+				Duration = null,    // This data was intentionally left blank.
+			};
+
+			if (setIdentityInsert)
+			{
+				context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT dbo.Songs ON");
+				context.Database.ExecuteSqlCommand("DBCC CHECKIDENT ('Songs', RESEED, 1)");
+			}
+
+			var discs = context.Discs
+				.Include(a => a.Songs);
+
+			discs.Single(a => a.Id == 11)
+				.Songs.Add(song111);
+
+			discs.Single(a => a.Id == 21)
+				.Songs.Add(song211);
+
+			discs.Single(a => a.Id == 22)
+				.Songs.AddRange(new[] { song221, song222 });
+
+			context.SaveChanges();
+
+			if (setIdentityInsert)
+			{
+				context.Database.ExecuteSqlCommand("SET IDENTITY_INSERT dbo.Songs OFF");
 			}
 		}
 	}

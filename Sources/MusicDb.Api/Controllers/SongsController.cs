@@ -73,8 +73,7 @@ namespace MusicDb.Api.Controllers
 			{
 				var song = await songsRepository.GetSong(artistId, discId, songId, cancellationToken).ConfigureAwait(false);
 
-				// TBD: Stream song content
-				return Ok($"Content of song '{song.Title}' goes here");
+				return Ok(CreateSongDto(song));
 			}
 			catch (NotFoundException e)
 			{
