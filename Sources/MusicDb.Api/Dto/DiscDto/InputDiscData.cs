@@ -1,7 +1,9 @@
-﻿using MusicDb.Abstractions.Models;
+﻿using System.Runtime.Serialization;
+using MusicDb.Abstractions.Models;
 
 namespace MusicDb.Api.Dto.DiscDto
 {
+	[DataContract]
 	public class InputDiscData : BasicDiscData
 	{
 		public Disc ToModel(int id = 0)
