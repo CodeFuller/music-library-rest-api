@@ -36,7 +36,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="TestRunSettings.json">
+    <None Update="TestRunSettings.SQLite.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestRunSettings.SqlServer.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

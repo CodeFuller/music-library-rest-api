@@ -1,0 +1,6 @@
+{
+	"database": {
+		"dbProviderType": "sqlite",
+		"connectionString": "DataSource=:memory:"
+	}
+}

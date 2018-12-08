@@ -1,9 +1,0 @@
-{
-	"database": {
-		"dbProviderType": "sqlite",
-		"connectionString": "DataSource=:memory:"
-
-		// "dbProviderType": "sqlServer",
-		// "connectionString": "Data Source=localhost;Initial Catalog=MusicDBTest;Integrated Security=True;"
-	}
-}

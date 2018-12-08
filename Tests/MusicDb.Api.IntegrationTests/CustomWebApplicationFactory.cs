@@ -44,11 +44,19 @@ namespace MusicDb.Api.IntegrationTests
 			if (connection == null)
 			{
 				var configBuilder = new ConfigurationBuilder();
-				configBuilder.AddJsonFile("TestRunSettings.json", optional: false);
+
+				// By default SQLite configuration is used
+				// CI Build deletes TestRunSettings.SQLite.json before running the test and TestRunSettings.SqlServer.json is used.
+				configBuilder.AddJsonFile("TestRunSettings.SqlServer.json", optional: true)
+					.AddJsonFile("TestRunSettings.SQLite.json", optional: true);
 				var configuration = configBuilder.Build();
 
 				dbSettings = new DatabaseSettings();
 				configuration.Bind("database", dbSettings);
+				if (String.IsNullOrEmpty(dbSettings.ConnectionString))
+				{
+					throw new InvalidOperationException("Database connection string is not set");
+				}
 
 				connection = CreateDbConnection(dbSettings.ConnectionString);
 				connection.Open();
