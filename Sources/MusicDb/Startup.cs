@@ -1,4 +1,5 @@
 ﻿using System;
+using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -32,9 +33,11 @@ namespace MusicDb
 			// This call should be made before services.AddMvc().
 			services.AddRouting(options => options.LowercaseUrls = true);
 
+			var apiAssembly = typeof(ApiAnchorType).Assembly;
+
 			services
 				.AddMvc()
-				.AddApplicationPart(typeof(AnchorType).Assembly)
+				.AddApplicationPart(apiAssembly)
 				.SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
 			services.AddSwagger();
@@ -52,6 +55,8 @@ namespace MusicDb
 			}
 
 			services.AddDbContext<MusicDbContext>(options => options.UseSqlServer(connectionString));
+
+			services.AddAutoMapper(apiAssembly);
 		}
 
 		public static void Configure(IApplicationBuilder app, IHostingEnvironment env)

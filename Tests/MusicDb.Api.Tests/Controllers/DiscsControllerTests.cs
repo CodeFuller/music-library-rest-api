@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -20,30 +20,21 @@ namespace MusicDb.Api.Tests.Controllers
 	public class DiscsControllerTests
 	{
 		[TestMethod]
-		public async Task GetAllArtistDiscs_IfArtistWasFound_ReturnsCorrectDiscsData()
+		public async Task GetAllArtistDiscs_IfArtistWasFound_ReturnsOkResultWithDiscsData()
 		{
 			// Arrange
 
-			var artist = new Artist
-			{
-				Id = 123,
-				Name = "Neuro Dubel",
-			};
+			var artist = new Artist();
 
 			var discs = new[]
 			{
 				new Disc
 				{
-					Id = 456,
-					Year = 2004,
-					Title = "Tanki",
 					Artist = artist,
 				},
 
 				new Disc
 				{
-					Id = 789,
-					Title = "Stasi",
 					Artist = artist,
 				},
 			};
@@ -52,7 +43,7 @@ namespace MusicDb.Api.Tests.Controllers
 			repositoryStub.Setup(x => x.GetAllArtistDiscs(777, It.IsAny<CancellationToken>()))
 				.ReturnsAsync(discs);
 
-			var target = new DiscsController(repositoryStub.Object, Mock.Of<ILogger<DiscsController>>());
+			var target = new DiscsController(repositoryStub.Object, StubMapper(), Mock.Of<ILogger<DiscsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -68,20 +59,6 @@ namespace MusicDb.Api.Tests.Controllers
 			Assert.IsNotNull(data);
 			var dataList = data.ToList();
 			Assert.AreEqual(2, dataList.Count);
-
-			var disc1 = dataList[0];
-			Assert.AreEqual("Tanki", disc1.Title);
-			Assert.AreEqual(2004, disc1.Year);
-			var link1 = disc1.Links.Single();
-			Assert.AreEqual("self", link1.Relation);
-			Assert.AreEqual(new Uri("/SomeUri", UriKind.Relative), link1.Uri);
-
-			var disc2 = dataList[1];
-			Assert.AreEqual("Stasi", disc2.Title);
-			Assert.IsNull(disc2.Year);
-			var link2 = disc1.Links.Single();
-			Assert.AreEqual("self", link2.Relation);
-			Assert.AreEqual(new Uri("/SomeUri", UriKind.Relative), link2.Uri);
 		}
 
 		[TestMethod]
@@ -93,7 +70,7 @@ namespace MusicDb.Api.Tests.Controllers
 			repositoryStub.Setup(x => x.GetAllArtistDiscs(777, It.IsAny<CancellationToken>()))
 				.ThrowsAsync(new NotFoundException());
 
-			var target = new DiscsController(repositoryStub.Object, Mock.Of<ILogger<DiscsController>>());
+			var target = new DiscsController(repositoryStub.Object, StubMapper(), Mock.Of<ILogger<DiscsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -106,26 +83,19 @@ namespace MusicDb.Api.Tests.Controllers
 		}
 
 		[TestMethod]
-		public async Task GetDisc_IfDiscWasFound_ReturnsCorrectDiscData()
+		public async Task GetDisc_IfDiscWasFound_ReturnsOkResultWithDiscData()
 		{
 			// Arrange
 
 			var disc = new Disc
 			{
-				Id = 456,
-				Title = "Beautiful Garbage",
-				Year = 2001,
-				Artist = new Artist
-				{
-					Id = 123,
-					Name = "Garbage",
-				},
+				Artist = new Artist(),
 			};
 
 			var repositoryStub = new Mock<IDiscsRepository>();
 			repositoryStub.Setup(x => x.GetDisc(123, 456, It.IsAny<CancellationToken>())).ReturnsAsync(disc);
 
-			var target = new DiscsController(repositoryStub.Object, Mock.Of<ILogger<DiscsController>>());
+			var target = new DiscsController(repositoryStub.Object, StubMapper(), Mock.Of<ILogger<DiscsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -139,12 +109,6 @@ namespace MusicDb.Api.Tests.Controllers
 
 			var data = result.Value as OutputDiscData;
 			Assert.IsNotNull(data);
-
-			Assert.AreEqual("Beautiful Garbage", data.Title);
-			Assert.AreEqual(2001, data.Year);
-			var link = data.Links.Single();
-			Assert.AreEqual("self", link.Relation);
-			Assert.AreEqual(new Uri("/SomeUri", UriKind.Relative), link.Uri);
 		}
 
 		[TestMethod]
@@ -156,7 +120,7 @@ namespace MusicDb.Api.Tests.Controllers
 			repositoryStub.Setup(x => x.GetDisc(123, 456, It.IsAny<CancellationToken>()))
 				.ThrowsAsync(new NotFoundException());
 
-			var target = new DiscsController(repositoryStub.Object, Mock.Of<ILogger<DiscsController>>());
+			var target = new DiscsController(repositoryStub.Object, StubMapper(), Mock.Of<ILogger<DiscsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -173,15 +137,15 @@ namespace MusicDb.Api.Tests.Controllers
 		{
 			// Arrange
 
-			var discData = new InputDiscData
-			{
-				Title = "The Fame Monster (EP)",
-				Year = 2009,
-			};
+			var discData = new InputDiscData();
+			var disc = new Disc();
 
 			var repositoryMock = new Mock<IDiscsRepository>();
 
-			var target = new DiscsController(repositoryMock.Object, Mock.Of<ILogger<DiscsController>>());
+			var mapperStub = new Mock<IMapper>();
+			mapperStub.Setup(x => x.Map<Disc>(discData)).Returns(disc);
+
+			var target = new DiscsController(repositoryMock.Object, mapperStub.Object, Mock.Of<ILogger<DiscsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -190,8 +154,7 @@ namespace MusicDb.Api.Tests.Controllers
 
 			// Assert
 
-			Expression<Func<Disc, bool>> discDataIsValid = disc => disc.Id == 0 && disc.Title == "The Fame Monster (EP)" && disc.Year == 2009;
-			repositoryMock.Verify(x => x.CreateDisc(123, It.Is(discDataIsValid), It.IsAny<CancellationToken>()), Times.Once);
+			repositoryMock.Verify(x => x.CreateDisc(123, It.Is<Disc>(d => Object.ReferenceEquals(d, disc) && d.Id == 0), It.IsAny<CancellationToken>()), Times.Once);
 		}
 
 		[TestMethod]
@@ -199,24 +162,17 @@ namespace MusicDb.Api.Tests.Controllers
 		{
 			// Arrange
 
-			var discData = new InputDiscData
-			{
-				Title = "Neo-Gothic Propaganda",
-				Year = 2014,
-			};
-
-			var target = new DiscsController(Mock.Of<IDiscsRepository>(), Mock.Of<ILogger<DiscsController>>());
+			var target = new DiscsController(Mock.Of<IDiscsRepository>(), StubMapper(), Mock.Of<ILogger<DiscsController>>());
 			target.StubControllerContext();
 
 			// Act
 
-			var actionResult = await target.CreateDisc(123, discData, CancellationToken.None);
+			var actionResult = await target.CreateDisc(123, new InputDiscData(), CancellationToken.None);
 
 			// Assert
 
 			var result = actionResult as CreatedResult;
 			Assert.IsNotNull(result);
-			Assert.AreEqual("/SomeUri", result.Location);
 		}
 
 		[TestMethod]
@@ -224,22 +180,16 @@ namespace MusicDb.Api.Tests.Controllers
 		{
 			// Arrange
 
-			var discData = new InputDiscData
-			{
-				Title = "Holy Wood (In The Shadow Of The Valley Of Death)",
-				Year = 2000,
-			};
-
 			var repositoryStub = new Mock<IDiscsRepository>();
 			repositoryStub.Setup(x => x.CreateDisc(123, It.IsAny<Disc>(), It.IsAny<CancellationToken>()))
 				.ThrowsAsync(new NotFoundException());
 
-			var target = new DiscsController(repositoryStub.Object, Mock.Of<ILogger<DiscsController>>());
+			var target = new DiscsController(repositoryStub.Object, StubMapper(), Mock.Of<ILogger<DiscsController>>());
 			target.StubControllerContext();
 
 			// Act
 
-			var actionResult = await target.CreateDisc(123, discData, CancellationToken.None);
+			var actionResult = await target.CreateDisc(123, new InputDiscData(), CancellationToken.None);
 
 			// Assert
 
@@ -251,15 +201,15 @@ namespace MusicDb.Api.Tests.Controllers
 		{
 			// Arrange
 
-			var discData = new InputDiscData
-			{
-				Title = "Play",
-				Year = 1999,
-			};
+			var discData = new InputDiscData();
+			var disc = new Disc();
 
 			var repositoryMock = new Mock<IDiscsRepository>();
 
-			var target = new DiscsController(repositoryMock.Object, Mock.Of<ILogger<DiscsController>>());
+			var mapperStub = new Mock<IMapper>();
+			mapperStub.Setup(x => x.Map<Disc>(discData)).Returns(disc);
+
+			var target = new DiscsController(repositoryMock.Object, mapperStub.Object, Mock.Of<ILogger<DiscsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -268,8 +218,7 @@ namespace MusicDb.Api.Tests.Controllers
 
 			// Assert
 
-			Expression<Func<Disc, bool>> discDataIsValid = disc => disc.Id == 456 && disc.Title == "Play" && disc.Year == 1999;
-			repositoryMock.Verify(x => x.UpdateDisc(123, It.Is(discDataIsValid), It.IsAny<CancellationToken>()), Times.Once);
+			repositoryMock.Verify(x => x.UpdateDisc(123, It.Is<Disc>(d => Object.ReferenceEquals(d, disc) && d.Id == 456), It.IsAny<CancellationToken>()), Times.Once);
 		}
 
 		[TestMethod]
@@ -277,18 +226,12 @@ namespace MusicDb.Api.Tests.Controllers
 		{
 			// Arrange
 
-			var discData = new InputDiscData
-			{
-				Title = "Play",
-				Year = 1999,
-			};
-
-			var target = new DiscsController(Mock.Of<IDiscsRepository>(), Mock.Of<ILogger<DiscsController>>());
+			var target = new DiscsController(Mock.Of<IDiscsRepository>(), StubMapper(), Mock.Of<ILogger<DiscsController>>());
 			target.StubControllerContext();
 
 			// Act
 
-			var actionResult = await target.UpdateDisc(123, 456, discData, CancellationToken.None);
+			var actionResult = await target.UpdateDisc(123, 456, new InputDiscData(), CancellationToken.None);
 
 			// Assert
 
@@ -300,21 +243,15 @@ namespace MusicDb.Api.Tests.Controllers
 		{
 			// Arrange
 
-			var discData = new InputDiscData
-			{
-				Title = "Wishmaster",
-				Year = 2000,
-			};
-
 			var repositoryStub = new Mock<IDiscsRepository>();
 			repositoryStub.Setup(x => x.UpdateDisc(It.IsAny<int>(), It.IsAny<Disc>(), It.IsAny<CancellationToken>())).ThrowsAsync(new NotFoundException());
 
-			var target = new DiscsController(repositoryStub.Object, Mock.Of<ILogger<DiscsController>>());
+			var target = new DiscsController(repositoryStub.Object, StubMapper(), Mock.Of<ILogger<DiscsController>>());
 			target.StubControllerContext();
 
 			// Act
 
-			var result = await target.UpdateDisc(123, 456, discData, CancellationToken.None);
+			var result = await target.UpdateDisc(123, 456, new InputDiscData(), CancellationToken.None);
 
 			// Assert
 
@@ -328,7 +265,7 @@ namespace MusicDb.Api.Tests.Controllers
 
 			var repositoryMock = new Mock<IDiscsRepository>();
 
-			var target = new DiscsController(repositoryMock.Object, Mock.Of<ILogger<DiscsController>>());
+			var target = new DiscsController(repositoryMock.Object, StubMapper(), Mock.Of<ILogger<DiscsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -345,9 +282,7 @@ namespace MusicDb.Api.Tests.Controllers
 		{
 			// Arrange
 
-			var repositoryStub = new Mock<IDiscsRepository>();
-
-			var target = new DiscsController(repositoryStub.Object, Mock.Of<ILogger<DiscsController>>());
+			var target = new DiscsController(Mock.Of<IDiscsRepository>(), StubMapper(), Mock.Of<ILogger<DiscsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -367,7 +302,7 @@ namespace MusicDb.Api.Tests.Controllers
 			var repositoryStub = new Mock<IDiscsRepository>();
 			repositoryStub.Setup(x => x.DeleteDisc(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>())).ThrowsAsync(new NotFoundException());
 
-			var target = new DiscsController(repositoryStub.Object, Mock.Of<ILogger<DiscsController>>());
+			var target = new DiscsController(repositoryStub.Object, StubMapper(), Mock.Of<ILogger<DiscsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -377,6 +312,19 @@ namespace MusicDb.Api.Tests.Controllers
 			// Assert
 
 			Assert.IsInstanceOfType(actionResult, typeof(NotFoundResult));
+		}
+
+		private static IMapper StubMapper()
+		{
+			var mapperStub = new Mock<IMapper>();
+
+			mapperStub.Setup(x => x.Map<Disc>(It.IsAny<InputDiscData>()))
+				.Returns(new Disc());
+
+			mapperStub.Setup(x => x.Map<OutputDiscData>(It.IsAny<Disc>()))
+				.Returns(new OutputDiscData());
+
+			return mapperStub.Object;
 		}
 	}
 }

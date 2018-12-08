@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -19,28 +20,21 @@ namespace MusicDb.Api.Tests.Controllers
 	public class ArtistsControllerTests
 	{
 		[TestMethod]
-		public async Task GetArtists_ReturnsCorrectArtistsData()
+		public async Task GetArtists_ReturnsOkResultWithArtistsData()
 		{
 			// Arrange
 
 			var artists = new[]
 			{
-				new Artist
-				{
-					Name = "Epica",
-				},
-
-				new Artist
-				{
-					Name = "Within Temptation",
-				},
+				new Artist(),
+				new Artist(),
 			};
 
 			var repositoryStub = new Mock<IArtistsRepository>();
 			repositoryStub.Setup(x => x.GetAllArtists(It.IsAny<CancellationToken>()))
 				.ReturnsAsync(artists);
 
-			var target = new ArtistsController(repositoryStub.Object, Mock.Of<ILogger<ArtistsController>>());
+			var target = new ArtistsController(repositoryStub.Object, StubMapper(), Mock.Of<ILogger<ArtistsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -56,34 +50,19 @@ namespace MusicDb.Api.Tests.Controllers
 			Assert.IsNotNull(data);
 			var dataList = data.ToList();
 			Assert.AreEqual(2, dataList.Count);
-
-			var artistDto1 = dataList[0];
-			Assert.AreEqual("Epica", artistDto1.Name);
-			var link1 = artistDto1.Links.Single();
-			Assert.AreEqual("self", link1.Relation);
-			Assert.AreEqual(new Uri("/SomeUri", UriKind.Relative), link1.Uri);
-
-			var artistDto2 = dataList[1];
-			Assert.AreEqual("Within Temptation", artistDto2.Name);
-			var link2 = artistDto1.Links.Single();
-			Assert.AreEqual("self", link2.Relation);
-			Assert.AreEqual(new Uri("/SomeUri", UriKind.Relative), link2.Uri);
 		}
 
 		[TestMethod]
-		public async Task GetArtist_IfArtistWasFound_ReturnsCorrectArtistData()
+		public async Task GetArtist_IfArtistWasFound_ReturnsOkResultWithArtistData()
 		{
 			// Arrange
 
-			var artist = new Artist
-			{
-				Name = "Imperia",
-			};
+			var artist = new Artist();
 
 			var repositoryStub = new Mock<IArtistsRepository>();
 			repositoryStub.Setup(x => x.GetArtist(123, It.IsAny<CancellationToken>())).ReturnsAsync(artist);
 
-			var target = new ArtistsController(repositoryStub.Object, Mock.Of<ILogger<ArtistsController>>());
+			var target = new ArtistsController(repositoryStub.Object, StubMapper(), Mock.Of<ILogger<ArtistsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -97,11 +76,6 @@ namespace MusicDb.Api.Tests.Controllers
 
 			var data = result.Value as OutputArtistData;
 			Assert.IsNotNull(data);
-
-			Assert.AreEqual("Imperia", data.Name);
-			var link = data.Links.Single();
-			Assert.AreEqual("self", link.Relation);
-			Assert.AreEqual(new Uri("/SomeUri", UriKind.Relative), link.Uri);
 		}
 
 		[TestMethod]
@@ -112,7 +86,7 @@ namespace MusicDb.Api.Tests.Controllers
 			var repositoryStub = new Mock<IArtistsRepository>();
 			repositoryStub.Setup(x => x.GetArtist(123, It.IsAny<CancellationToken>())).ThrowsAsync(new NotFoundException());
 
-			var target = new ArtistsController(repositoryStub.Object, Mock.Of<ILogger<ArtistsController>>());
+			var target = new ArtistsController(repositoryStub.Object, StubMapper(), Mock.Of<ILogger<ArtistsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -129,14 +103,15 @@ namespace MusicDb.Api.Tests.Controllers
 		{
 			// Arrange
 
-			var artistData = new InputArtistData
-			{
-				Name = "Nightwish",
-			};
+			var artistData = new InputArtistData();
+			var artist = new Artist();
 
 			var repositoryMock = new Mock<IArtistsRepository>();
 
-			var target = new ArtistsController(repositoryMock.Object, Mock.Of<ILogger<ArtistsController>>());
+			var mapperStub = new Mock<IMapper>();
+			mapperStub.Setup(x => x.Map<Artist>(artistData)).Returns(artist);
+
+			var target = new ArtistsController(repositoryMock.Object, mapperStub.Object, Mock.Of<ILogger<ArtistsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -145,7 +120,7 @@ namespace MusicDb.Api.Tests.Controllers
 
 			// Assert
 
-			repositoryMock.Verify(x => x.CreateArtist(It.Is<Artist>(a => a.Id == 0 && a.Name == "Nightwish"), It.IsAny<CancellationToken>()), Times.Once);
+			repositoryMock.Verify(x => x.CreateArtist(It.Is<Artist>(a => Object.ReferenceEquals(a, artist) && a.Id == 0), It.IsAny<CancellationToken>()), Times.Once);
 		}
 
 		[TestMethod]
@@ -153,23 +128,17 @@ namespace MusicDb.Api.Tests.Controllers
 		{
 			// Arrange
 
-			var artistData = new InputArtistData
-			{
-				Name = "Linkin Park",
-			};
-
-			var target = new ArtistsController(Mock.Of<IArtistsRepository>(), Mock.Of<ILogger<ArtistsController>>());
+			var target = new ArtistsController(Mock.Of<IArtistsRepository>(), StubMapper(), Mock.Of<ILogger<ArtistsController>>());
 			target.StubControllerContext();
 
 			// Act
 
-			var actionResult = await target.CreateArtist(artistData, CancellationToken.None);
+			var actionResult = await target.CreateArtist(new InputArtistData(), CancellationToken.None);
 
 			// Assert
 
 			var result = actionResult as CreatedResult;
 			Assert.IsNotNull(result);
-			Assert.AreEqual("/SomeUri", result.Location);
 		}
 
 		[TestMethod]
@@ -177,20 +146,15 @@ namespace MusicDb.Api.Tests.Controllers
 		{
 			// Arrange
 
-			var artistData = new InputArtistData
-			{
-				Name = "Limp Bizkit",
-			};
-
 			var repositoryStub = new Mock<IArtistsRepository>();
 			repositoryStub.Setup(x => x.CreateArtist(It.IsAny<Artist>(), It.IsAny<CancellationToken>())).ThrowsAsync(new DuplicateKeyException());
 
-			var target = new ArtistsController(repositoryStub.Object, Mock.Of<ILogger<ArtistsController>>());
+			var target = new ArtistsController(repositoryStub.Object, StubMapper(), Mock.Of<ILogger<ArtistsController>>());
 			target.StubControllerContext();
 
 			// Act
 
-			var actionResult = await target.CreateArtist(artistData, CancellationToken.None);
+			var actionResult = await target.CreateArtist(new InputArtistData(), CancellationToken.None);
 
 			// Assert
 
@@ -202,14 +166,15 @@ namespace MusicDb.Api.Tests.Controllers
 		{
 			// Arrange
 
-			var artistData = new InputArtistData
-			{
-				Name = "AC/DC",
-			};
+			var artistData = new InputArtistData();
+			var artist = new Artist();
 
 			var repositoryMock = new Mock<IArtistsRepository>();
 
-			var target = new ArtistsController(repositoryMock.Object, Mock.Of<ILogger<ArtistsController>>());
+			var mapperStub = new Mock<IMapper>();
+			mapperStub.Setup(x => x.Map<Artist>(artistData)).Returns(artist);
+
+			var target = new ArtistsController(repositoryMock.Object, mapperStub.Object, Mock.Of<ILogger<ArtistsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -218,7 +183,7 @@ namespace MusicDb.Api.Tests.Controllers
 
 			// Assert
 
-			repositoryMock.Verify(x => x.UpdateArtist(It.Is<Artist>(a => a.Id == 123 && a.Name == "AC/DC"), It.IsAny<CancellationToken>()), Times.Once);
+			repositoryMock.Verify(x => x.UpdateArtist(It.Is<Artist>(a => Object.ReferenceEquals(a, artist) && a.Id == 123), It.IsAny<CancellationToken>()), Times.Once);
 		}
 
 		[TestMethod]
@@ -226,17 +191,12 @@ namespace MusicDb.Api.Tests.Controllers
 		{
 			// Arrange
 
-			var artistData = new InputArtistData
-			{
-				Name = "Depeche Mode",
-			};
-
-			var target = new ArtistsController(Mock.Of<IArtistsRepository>(), Mock.Of<ILogger<ArtistsController>>());
+			var target = new ArtistsController(Mock.Of<IArtistsRepository>(), StubMapper(), Mock.Of<ILogger<ArtistsController>>());
 			target.StubControllerContext();
 
 			// Act
 
-			var actionResult = await target.UpdateArtist(123, artistData, CancellationToken.None);
+			var actionResult = await target.UpdateArtist(123, new InputArtistData(), CancellationToken.None);
 
 			// Assert
 
@@ -248,20 +208,15 @@ namespace MusicDb.Api.Tests.Controllers
 		{
 			// Arrange
 
-			var artistData = new InputArtistData
-			{
-				Name = "Evanescence",
-			};
-
 			var repositoryStub = new Mock<IArtistsRepository>();
 			repositoryStub.Setup(x => x.UpdateArtist(It.IsAny<Artist>(), It.IsAny<CancellationToken>())).ThrowsAsync(new NotFoundException());
 
-			var target = new ArtistsController(repositoryStub.Object, Mock.Of<ILogger<ArtistsController>>());
+			var target = new ArtistsController(repositoryStub.Object, StubMapper(), Mock.Of<ILogger<ArtistsController>>());
 			target.StubControllerContext();
 
 			// Act
 
-			var result = await target.UpdateArtist(123, artistData, CancellationToken.None);
+			var result = await target.UpdateArtist(123, new InputArtistData(), CancellationToken.None);
 
 			// Assert
 
@@ -273,20 +228,15 @@ namespace MusicDb.Api.Tests.Controllers
 		{
 			// Arrange
 
-			var artistData = new InputArtistData
-			{
-				Name = "Evanescence",
-			};
-
 			var repositoryStub = new Mock<IArtistsRepository>();
 			repositoryStub.Setup(x => x.UpdateArtist(It.IsAny<Artist>(), It.IsAny<CancellationToken>())).ThrowsAsync(new DuplicateKeyException());
 
-			var target = new ArtistsController(repositoryStub.Object, Mock.Of<ILogger<ArtistsController>>());
+			var target = new ArtistsController(repositoryStub.Object, StubMapper(), Mock.Of<ILogger<ArtistsController>>());
 			target.StubControllerContext();
 
 			// Act
 
-			var result = await target.UpdateArtist(123, artistData, CancellationToken.None);
+			var result = await target.UpdateArtist(123, new InputArtistData(), CancellationToken.None);
 
 			// Assert
 
@@ -300,7 +250,7 @@ namespace MusicDb.Api.Tests.Controllers
 
 			var repositoryMock = new Mock<IArtistsRepository>();
 
-			var target = new ArtistsController(repositoryMock.Object, Mock.Of<ILogger<ArtistsController>>());
+			var target = new ArtistsController(repositoryMock.Object, StubMapper(), Mock.Of<ILogger<ArtistsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -317,7 +267,7 @@ namespace MusicDb.Api.Tests.Controllers
 		{
 			// Arrange
 
-			var target = new ArtistsController(Mock.Of<IArtistsRepository>(), Mock.Of<ILogger<ArtistsController>>());
+			var target = new ArtistsController(Mock.Of<IArtistsRepository>(), StubMapper(), Mock.Of<ILogger<ArtistsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -337,7 +287,7 @@ namespace MusicDb.Api.Tests.Controllers
 			var repositoryStub = new Mock<IArtistsRepository>();
 			repositoryStub.Setup(x => x.DeleteArtist(It.IsAny<int>(), It.IsAny<CancellationToken>())).ThrowsAsync(new NotFoundException());
 
-			var target = new ArtistsController(repositoryStub.Object, Mock.Of<ILogger<ArtistsController>>());
+			var target = new ArtistsController(repositoryStub.Object, StubMapper(), Mock.Of<ILogger<ArtistsController>>());
 			target.StubControllerContext();
 
 			// Act
@@ -347,6 +297,19 @@ namespace MusicDb.Api.Tests.Controllers
 			// Assert
 
 			Assert.IsInstanceOfType(result, typeof(NotFoundResult));
+		}
+
+		private static IMapper StubMapper()
+		{
+			var mapperStub = new Mock<IMapper>();
+
+			mapperStub.Setup(x => x.Map<Artist>(It.IsAny<InputArtistData>()))
+				.Returns(new Artist());
+
+			mapperStub.Setup(x => x.Map<OutputArtistData>(It.IsAny<Artist>()))
+				.Returns(new OutputArtistData());
+
+			return mapperStub.Object;
 		}
 	}
 }

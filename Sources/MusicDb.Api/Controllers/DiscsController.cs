@@ -4,11 +4,13 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MusicDb.Abstractions.Exceptions;
 using MusicDb.Abstractions.Interfaces;
 using MusicDb.Abstractions.Models;
+using MusicDb.Api.Dto;
 using MusicDb.Api.Dto.DiscDto;
 using NSwag.Annotations;
 
@@ -19,11 +21,14 @@ namespace MusicDb.Api.Controllers
 	{
 		private readonly IDiscsRepository discsRepository;
 
+		private readonly IMapper mapper;
+
 		private readonly ILogger<DiscsController> logger;
 
-		public DiscsController(IDiscsRepository discsRepository, ILogger<DiscsController> logger)
+		public DiscsController(IDiscsRepository discsRepository, IMapper mapper, ILogger<DiscsController> logger)
 		{
 			this.discsRepository = discsRepository ?? throw new ArgumentNullException(nameof(discsRepository));
+			this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
 			this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
 		}
 
@@ -84,7 +89,7 @@ namespace MusicDb.Api.Controllers
 		/// Creates new artist disc.
 		/// </summary>
 		/// <param name="artistId">Id of artist to which new disc belongs.</param>
-		/// <param name="disc">Data for new disc.</param>
+		/// <param name="discDto">Data for new disc.</param>
 		/// <param name="cancellationToken">Cancellation token.</param>
 		/// <returns>
 		/// Returns the location of newly created disc.
@@ -93,14 +98,14 @@ namespace MusicDb.Api.Controllers
 		[SwaggerResponse(HttpStatusCode.Created, typeof(void))]
 		[SwaggerResponse(HttpStatusCode.Forbidden, typeof(void), Description = "Principal is not authorized for database modification.")]
 		[SwaggerResponse(HttpStatusCode.NotFound, typeof(void), Description = "Requested artist was not found.")]
-		public async Task<ActionResult> CreateDisc(int artistId, [FromBody] InputDiscData disc, CancellationToken cancellationToken)
+		public async Task<ActionResult> CreateDisc(int artistId, [FromBody] InputDiscData discDto, CancellationToken cancellationToken)
 		{
-			var model = disc.ToModel();
+			var disc = mapper.Map<Disc>(discDto);
 			int newDiscId;
 
 			try
 			{
-				newDiscId = await discsRepository.CreateDisc(artistId, model, cancellationToken).ConfigureAwait(false);
+				newDiscId = await discsRepository.CreateDisc(artistId, disc, cancellationToken).ConfigureAwait(false);
 			}
 			catch (NotFoundException e)
 			{
@@ -116,7 +121,7 @@ namespace MusicDb.Api.Controllers
 		/// </summary>
 		/// <param name="artistId">Artist id.</param>
 		/// <param name="discId">Disc id.</param>
-		/// <param name="disc">New data for the disc.</param>
+		/// <param name="discDto">New data for the disc.</param>
 		/// <param name="cancellationToken">Cancellation token.</param>
 		/// <returns>
 		/// Disc data was updated successfully.
@@ -125,13 +130,14 @@ namespace MusicDb.Api.Controllers
 		[SwaggerResponse(HttpStatusCode.NoContent, typeof(void))]
 		[SwaggerResponse(HttpStatusCode.Forbidden, typeof(void), Description = "Principal is not authorized for database modification.")]
 		[SwaggerResponse(HttpStatusCode.NotFound, typeof(void), Description = "Requested disc was not found.")]
-		public async Task<ActionResult> UpdateDisc(int artistId, int discId, [FromBody] InputDiscData disc, CancellationToken cancellationToken)
+		public async Task<ActionResult> UpdateDisc(int artistId, int discId, [FromBody] InputDiscData discDto, CancellationToken cancellationToken)
 		{
-			var model = disc.ToModel(discId);
+			var disc = mapper.Map<Disc>(discDto);
+			disc.Id = discId;
 
 			try
 			{
-				await discsRepository.UpdateDisc(artistId, model, cancellationToken).ConfigureAwait(false);
+				await discsRepository.UpdateDisc(artistId, disc, cancellationToken).ConfigureAwait(false);
 			}
 			catch (NotFoundException e)
 			{
@@ -172,7 +178,10 @@ namespace MusicDb.Api.Controllers
 
 		private OutputDiscData CreateDiscDto(Disc disc)
 		{
-			return new OutputDiscData(disc, GetDiscUri(disc.Artist.Id, disc.Id));
+			var discDto = mapper.Map<OutputDiscData>(disc);
+			discDto.Links.Add(LinkDto.Self(GetDiscUri(disc.Artist.Id, disc.Id)));
+
+			return discDto;
 		}
 
 		private Uri GetDiscUri(int artistId, int discId)

@@ -4,11 +4,13 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MusicDb.Abstractions.Exceptions;
 using MusicDb.Abstractions.Interfaces;
 using MusicDb.Abstractions.Models;
+using MusicDb.Api.Dto;
 using MusicDb.Api.Dto.ArtistDto;
 using NSwag.Annotations;
 
@@ -23,11 +25,14 @@ namespace MusicDb.Api.Controllers
 	{
 		private readonly IArtistsRepository repository;
 
+		private readonly IMapper mapper;
+
 		private readonly ILogger<ArtistsController> logger;
 
-		public ArtistsController(IArtistsRepository repository, ILogger<ArtistsController> logger)
+		public ArtistsController(IArtistsRepository repository, IMapper mapper, ILogger<ArtistsController> logger)
 		{
 			this.repository = repository ?? throw new ArgumentNullException(nameof(repository));
+			this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
 			this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
 		}
 
@@ -74,7 +79,7 @@ namespace MusicDb.Api.Controllers
 		/// <summary>
 		/// Creates new artist.
 		/// </summary>
-		/// <param name="artist">Data for new artist.</param>
+		/// <param name="artistDto">Data for new artist.</param>
 		/// <param name="cancellationToken">Cancellation token.</param>
 		/// <returns>
 		/// Returns the location of newly created artist.
@@ -83,18 +88,19 @@ namespace MusicDb.Api.Controllers
 		[SwaggerResponse(HttpStatusCode.Created, typeof(void))]
 		[SwaggerResponse(HttpStatusCode.Forbidden, typeof(void), Description = "Principal is not authorized for database modification.")]
 		[SwaggerResponse(HttpStatusCode.Conflict, typeof(void), Description = "The artist with specified name already exists.")]
-		public async Task<ActionResult> CreateArtist([FromBody] InputArtistData artist, CancellationToken cancellationToken)
+		public async Task<ActionResult> CreateArtist([FromBody] InputArtistData artistDto, CancellationToken cancellationToken)
 		{
-			var model = artist.ToModel();
+			var artist = mapper.Map<Artist>(artistDto);
+
 			int newArtistId;
 
 			try
 			{
-				newArtistId = await repository.CreateArtist(model, cancellationToken).ConfigureAwait(false);
+				newArtistId = await repository.CreateArtist(artist, cancellationToken).ConfigureAwait(false);
 			}
 			catch (DuplicateKeyException e)
 			{
-				logger.LogWarning(e, "Failed to create artist '{ArtistName}'", model.Name);
+				logger.LogWarning(e, "Failed to create artist '{ArtistName}'", artist.Name);
 				return Conflict();
 			}
 
@@ -105,7 +111,7 @@ namespace MusicDb.Api.Controllers
 		/// Updates specific artist.
 		/// </summary>
 		/// <param name="artistId">Id of updated artist.</param>
-		/// <param name="artist">New data for the artist.</param>
+		/// <param name="artistDto">New data for the artist.</param>
 		/// <param name="cancellationToken">Cancellation token.</param>
 		/// <returns>
 		/// Artist data was updated successfully.
@@ -114,13 +120,14 @@ namespace MusicDb.Api.Controllers
 		[SwaggerResponse(HttpStatusCode.NoContent, typeof(void))]
 		[SwaggerResponse(HttpStatusCode.Forbidden, typeof(void), Description = "Principal is not authorized for database modification.")]
 		[SwaggerResponse(HttpStatusCode.NotFound, typeof(void), Description = "Requested artist was not found.")]
-		public async Task<ActionResult> UpdateArtist(int artistId, [FromBody] InputArtistData artist, CancellationToken cancellationToken)
+		public async Task<ActionResult> UpdateArtist(int artistId, [FromBody] InputArtistData artistDto, CancellationToken cancellationToken)
 		{
-			var model = artist.ToModel(artistId);
+			var artist = mapper.Map<Artist>(artistDto);
+			artist.Id = artistId;
 
 			try
 			{
-				await repository.UpdateArtist(model, cancellationToken).ConfigureAwait(false);
+				await repository.UpdateArtist(artist, cancellationToken).ConfigureAwait(false);
 			}
 			catch (NotFoundException e)
 			{
@@ -165,7 +172,10 @@ namespace MusicDb.Api.Controllers
 
 		private OutputArtistData CreateArtistDto(Artist artist)
 		{
-			return new OutputArtistData(artist, GetArtistUri(artist.Id));
+			var artistDto = mapper.Map<OutputArtistData>(artist);
+			artistDto.Links.Add(LinkDto.Self(GetArtistUri(artist.Id)));
+
+			return artistDto;
 		}
 
 		private Uri GetArtistUri(int artistId)

@@ -4,11 +4,13 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MusicDb.Abstractions.Exceptions;
 using MusicDb.Abstractions.Interfaces;
 using MusicDb.Abstractions.Models;
+using MusicDb.Api.Dto;
 using MusicDb.Api.Dto.SongDto;
 using NSwag.Annotations;
 
@@ -19,11 +21,14 @@ namespace MusicDb.Api.Controllers
 	{
 		private readonly ISongsRepository songsRepository;
 
+		private readonly IMapper mapper;
+
 		private readonly ILogger<SongsController> logger;
 
-		public SongsController(ISongsRepository songsRepository, ILogger<SongsController> logger)
+		public SongsController(ISongsRepository songsRepository, IMapper mapper, ILogger<SongsController> logger)
 		{
 			this.songsRepository = songsRepository ?? throw new ArgumentNullException(nameof(songsRepository));
+			this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
 			this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
 		}
 
@@ -87,7 +92,7 @@ namespace MusicDb.Api.Controllers
 		/// </summary>
 		/// <param name="artistId">Id of artist to which the disc belongs.</param>
 		/// <param name="discId">Id of disc to which new song belongs.</param>
-		/// <param name="song">Data for new song.</param>
+		/// <param name="songDto">Data for new song.</param>
 		/// <param name="cancellationToken">Cancellation token.</param>
 		/// <returns>
 		/// Returns the location of newly created song.
@@ -96,14 +101,14 @@ namespace MusicDb.Api.Controllers
 		[SwaggerResponse(HttpStatusCode.Created, typeof(void))]
 		[SwaggerResponse(HttpStatusCode.Forbidden, typeof(void), Description = "Principal is not authorized for database modification.")]
 		[SwaggerResponse(HttpStatusCode.NotFound, typeof(void), Description = "Requested artist or disc was not found.")]
-		public async Task<ActionResult> CreateSong(int artistId, int discId, [FromBody] InputSongData song, CancellationToken cancellationToken)
+		public async Task<ActionResult> CreateSong(int artistId, int discId, [FromBody] InputSongData songDto, CancellationToken cancellationToken)
 		{
-			var model = song.ToModel();
+			var song = mapper.Map<Song>(songDto);
 			int newSongId;
 
 			try
 			{
-				newSongId = await songsRepository.CreateSong(artistId, discId, model, cancellationToken).ConfigureAwait(false);
+				newSongId = await songsRepository.CreateSong(artistId, discId, song, cancellationToken).ConfigureAwait(false);
 			}
 			catch (NotFoundException e)
 			{
@@ -120,7 +125,7 @@ namespace MusicDb.Api.Controllers
 		/// <param name="artistId">Artist id.</param>
 		/// <param name="discId">Disc id.</param>
 		/// <param name="songId">Song id.</param>
-		/// <param name="song">New data for the song.</param>
+		/// <param name="songDto">New data for the song.</param>
 		/// <param name="cancellationToken">Cancellation token.</param>
 		/// <returns>
 		/// Song data was updated successfully.
@@ -129,13 +134,14 @@ namespace MusicDb.Api.Controllers
 		[SwaggerResponse(HttpStatusCode.NoContent, typeof(void))]
 		[SwaggerResponse(HttpStatusCode.Forbidden, typeof(void), Description = "Principal is not authorized for database modification.")]
 		[SwaggerResponse(HttpStatusCode.NotFound, typeof(void), Description = "Requested song was not found.")]
-		public async Task<ActionResult> UpdateSong(int artistId, int discId, int songId, [FromBody] InputSongData song, CancellationToken cancellationToken)
+		public async Task<ActionResult> UpdateSong(int artistId, int discId, int songId, [FromBody] InputSongData songDto, CancellationToken cancellationToken)
 		{
-			var model = song.ToModel(songId);
+			var song = mapper.Map<Song>(songDto);
+			song.Id = songId;
 
 			try
 			{
-				await songsRepository.UpdateSong(artistId, discId, model, cancellationToken).ConfigureAwait(false);
+				await songsRepository.UpdateSong(artistId, discId, song, cancellationToken).ConfigureAwait(false);
 			}
 			catch (NotFoundException e)
 			{
@@ -178,7 +184,10 @@ namespace MusicDb.Api.Controllers
 		private OutputSongData CreateSongDto(Song song)
 		{
 			var disc = song.Disc;
-			return new OutputSongData(song, GetSongUri(disc.Artist.Id, disc.Id, song.Id));
+			var songDto = mapper.Map<OutputSongData>(song);
+			songDto.Links.Add(LinkDto.Self(GetSongUri(disc.Artist.Id, disc.Id, song.Id)));
+
+			return songDto;
 		}
 
 		private Uri GetSongUri(int artistId, int discId, int songId)

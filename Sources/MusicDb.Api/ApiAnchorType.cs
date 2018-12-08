@@ -1,6 +1,6 @@
 ﻿namespace MusicDb.Api
 {
-	public abstract class AnchorType
+	public abstract class ApiAnchorType
 	{
 	}
 }
