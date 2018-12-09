@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 
 namespace MusicDb
 {
@@ -17,6 +18,12 @@ namespace MusicDb
 
 		public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
 			WebHost.CreateDefaultBuilder(args)
+				.ConfigureAppConfiguration((hostingContext, config) =>
+				{
+					config.AddJsonFile("appsettings.json", optional: false)
+						.AddEnvironmentVariables()
+						.AddCommandLine(args);
+				})
 				.UseStartup<Startup>();
 	}
 }
