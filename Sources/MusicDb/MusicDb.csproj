@@ -27,7 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MusicDb.Api\MusicDb.Api.csproj" />
-    <ProjectReference Include="..\MusicDb.Dal.SqlServer\MusicDb.Dal.SqlServer.csproj" />
+    <ProjectReference Include="..\MusicDb.Dal.EfCore\MusicDb.Dal.EfCore.csproj" />
   </ItemGroup>
 
   <ItemGroup>

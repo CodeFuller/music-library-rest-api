@@ -5,5 +5,6 @@
 		None,
 		Sqlite,
 		SqlServer,
+		PostgreSql,
 	}
 }

@@ -9,9 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 using MusicDb.Abstractions.Interfaces;
 using MusicDb.Abstractions.Settings;
 using MusicDb.Api;
-using MusicDb.Dal.SqlServer;
-using MusicDb.Dal.SqlServer.Internal;
-using MusicDb.Dal.SqlServer.Repositories;
+using MusicDb.Dal.EfCore;
+using MusicDb.Dal.EfCore.Internal;
+using MusicDb.Dal.EfCore.Repositories;
 using NJsonSchema;
 using NSwag.AspNetCore;
 
@@ -54,7 +54,7 @@ namespace MusicDb
 				throw new InvalidOperationException("Database connection string is not set");
 			}
 
-			services.AddDbContext<MusicDbContext>(options => options.UseSqlServer(connectionString));
+			services.AddDbContext<MusicDbContext>(options => options.UseNpgsql(connectionString));
 
 			services.AddAutoMapper(apiAssembly);
 		}

@@ -1,0 +1,6 @@
+{
+	"database": {
+		"dbProviderType": "postgreSql",
+		"connectionString": "Server=localhost;Port=5432;Database=MusicDbTest;User Id=postgres;Password=efm5kctL4ylv4KnCZ9IG;"
+	}
+}

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using MusicDb.Dal.SqlServer;
+using MusicDb.Dal.EfCore;
 
 namespace MusicDb
 {
