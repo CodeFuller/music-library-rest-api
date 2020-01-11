@@ -20,7 +20,7 @@ namespace MusicDb.Dal.EfCore
 
 		private static string LoadConnectionString()
 		{
-			// Currently there is not proper way to configure connection string via tool arguments.
+			// Currently there is no proper way to configure connection string via tool arguments.
 			// Track: https://github.com/aspnet/EntityFrameworkCore/issues/8332
 			var connectionStringFileName = Path.Combine(Directory.GetCurrentDirectory(), "MigrationsConnectionString.txt");
 

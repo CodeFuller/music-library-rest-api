@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MusicDb.Abstractions.Interfaces;
-using MusicDb.Abstractions.Settings;
 using MusicDb.Api;
 using MusicDb.Dal.EfCore;
 using MusicDb.Dal.EfCore.Internal;
@@ -28,8 +27,6 @@ namespace MusicDb
 
 		public void ConfigureServices(IServiceCollection services)
 		{
-			services.Configure<DatabaseConnectionSettings>(Configuration.GetSection("database"));
-
 			// This call should be made before services.AddMvc().
 			services.AddRouting(options => options.LowercaseUrls = true);
 

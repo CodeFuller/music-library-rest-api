@@ -99,7 +99,7 @@ namespace MusicDb.Api.IntegrationTests
 		private void SeedData(MusicDbContext context, IIdentityInsert identityInsert)
 		{
 			// Deleting any existing data.
-			// This should be done before resetting currenty identity value.
+			// This should be done before resetting current identity value.
 			context.Artists.RemoveRange(context.Artists);
 			context.SaveChanges();
 
