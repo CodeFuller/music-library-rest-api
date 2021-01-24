@@ -36,4 +36,11 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="../../LICENSE.txt" />
+    <None Update="../../LICENSE.txt" Link="LICENSE.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
